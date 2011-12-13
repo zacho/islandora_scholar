@@ -5,6 +5,9 @@
  *
  * Implements hooks and callbacks for this module.
  */
+ 
+define(CITEPROC_CACHE_TABLE, 'cache');  //Should probably be made to use it's own table at some point...
+define(CITEPROC_CACHE_PREFIX, 'citation');
 
 function citeproc_item_from_mods($mods, $cache_id = NULL) {
   module_load_include('inc', 'citeproc', 'CiteProcJSItem');
@@ -82,4 +85,15 @@ function citeproc_style($style) {
 function citeproc_get_id() {
   static $i = 0;
   return t('citeproc_idnum_!id', array('!id' => $i++));
+}
+
+function citeproc_clear_cache(array &$form, &$form_state) {
+  $pid = $form_state['values']['pid'];
+  _citeproc_clear_cache($pid);
+}
+
+function _citeproc_clear_cache($pid) {
+  cache_clear_all(t('!prefix_!pid', array(
+    '!prefix' => CITEPROC_CACHE_PREFIX,
+    '!pid' => $pid)), CITEPROC_CACHE_TABLE);
 }

@@ -20,6 +20,11 @@ div.form-item {
 .ahah-progress {
   display: inline-block;
 }
+
+#scholar-search-results-form > div > div {
+  float: left;
+}
+
 /*
 .scholar_search_item {
   margin: 1em;

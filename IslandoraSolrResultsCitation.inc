@@ -25,8 +25,8 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     $sort = $_SESSION['scholar']['search']['sort'];
     $order = $_SESSION['scholar']['search']['order'];
     if (!empty($_SESSION['scholar']['search']['sort'])) {
-      $query_processor->solrParams['fl'] = 'PID,mod_fullxml_store';
-      $query_processor->solrParams['sort'] = $sort . ' ' . $order;
+      $query_processor->solrParams['fl'] = 'PID,mod_fullxml_store,score,mods_title_mlt';
+      $query_processor->solrParams['sort'] = $sort .' '. $order;
       $query_processor->executeQuery();
     }
     $total = (int) $query_processor->solrResult->response->numFound;
@@ -73,7 +73,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
 function template_preprocess_scholar_search_alt_item(array &$vars)  {
   $s_doc =& $vars['solr_doc'];
   $pid = $s_doc->PID;
-  $title = $s_doc->mods_title_ms;
+  $title = $s_doc->mods_title_mlt;
   if (is_array($title)) {$title = $title[0];}
   
   $vars['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
@@ -156,53 +156,55 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
       '#prefix' => '<div class="scholar-export-controls">',
       '#suffix' => '</div>',
       'export' => array(
-        '#value' => t('Export To File'),
-        '#prefix' => '<h4>',
-        '#suffix' => '</h4>'
-      ),
-      'format' => array(
-        '#type' => 'select',
-        '#length' => 50,
-        '#options' => array(
-          'RIS' => 'RIS',
-          'RTF' => 'RTF',
-          'PDF' => 'PDF',
-        )
-      ),
-      'style' => array(
-        '#type' => 'select',
-        '#options' => $styles
-      ),
-      'export all' => array(
-        '#type' => 'submit',
-        '#action' => 'export',
-        '#export' => 'all',
-        '#value' => t('Export All Results'),
-        '#submit' => array('scholar_search_results_form_export')
-      ),
-      'export selected' => array(
-        '#type' => 'submit',
-        '#action' => 'export',
-        '#export' => 'selected',
-        '#value' => t('Export Selected'),
-        '#submit' => array('scholar_search_results_form_export')
+        '#type' => 'fieldset',
+        '#title' => t('Export To File'),
+        '#prefix' => '<div class="form-export">',
+        '#suffix' => '</div>',
+        'format' => array(
+          '#type' => 'select',
+          '#length' => 50,
+          '#options' => array(
+            'RIS' => 'RIS',
+            'RTF' => 'RTF',
+            'PDF' => 'PDF',
+          )
+        ),
+        'style' => array(
+          '#type' => 'select',
+          '#options' => $styles
+        ),
+        'export all' => array(
+          '#type' => 'submit',
+          '#action' => 'export',
+          '#export' => 'all',
+          '#value' => t('Export All Results'),
+          '#submit' => array('scholar_search_results_form_export')
+        ),
+        'export selected' => array(
+          '#type' => 'submit',
+          '#action' => 'export',
+          '#export' => 'selected',
+          '#value' => t('Export Selected'),
+          '#submit' => array('scholar_search_results_form_export')
+        ),
       ),
       'save' => array(
-        '#value' => t('Save to Bibliography'),
-        '#prefix' => '<h4>',
-        '#suffix' => '</h4>'
-      ),
-      'save all' => array(
-        '#type' => 'submit',
-        '#save' => 'all',
-        '#value' => t('Save All Results'),
-        '#submit' => array('scholar_search_results_form_save_to_bibliography')
-      ),
-      'save selected' => array(
-        '#type' => 'submit',
-        '#save' => 'selected',
-        '#value' => t('Save Selected'),
-        '#submit' => array('scholar_search_results_form_save_to_bibliography')
+        '#type' => 'fieldset',
+        '#title' => t('Save to Bibliography'),
+        '#prefix' => '<div class="save-to-bibliography">',
+        '#suffix' => '</div>',
+        'save all' => array(
+          '#type' => 'submit',
+          '#save' => 'all',
+          '#value' => t('Save All Results'),
+          '#submit' => array('scholar_search_results_form_save_to_bibliography')
+        ),
+        'save selected' => array(
+          '#type' => 'submit',
+          '#save' => 'selected',
+          '#value' => t('Save Selected'),
+          '#submit' => array('scholar_search_results_form_save_to_bibliography'),
+        ),
       ),
     ),
     'pager' => array(
@@ -253,7 +255,7 @@ function scholar_search_results_form_save_to_bibliography(array $form, array &$f
   }
   $count = Bibliography::AddCitations($pids);
   $form_state['storage'] = NULL;
-  drupal_set_message(t('Added %num Citation(s)', array('%num' => $count)));
+  drupal_set_message(format_plural($count, 'Added 1 citation', 'Added @count citations'));
 }
 
 function scholar_search_results_form_export(array $form, array &$form_state) {

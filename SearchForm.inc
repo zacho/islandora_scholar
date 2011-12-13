@@ -33,7 +33,7 @@ function scholar_search_form(array &$form_state) {
     unset($_SESSION['scholar']['search']['values']); // Forget this for the next page visit.
   }
   $terms = array(
-    '#prefix' => '<div id="scholar-search-terms">',
+    '#prefix' => '<div id="scholar-search-terms"><h3 class="search-title">' . t('Search') . '</h3>',
     '#suffix' => '</div>',
     '#tree' => TRUE,
   );
@@ -100,6 +100,7 @@ EOT
       'add' => array(
         '#type' => 'button',
         '#value' => '+',
+        '#attributes' => array('title' => t('Add field')),
         '#ahah' => array(
           'path' => MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD,
           'wrapper' => 'scholar-search-terms',
@@ -113,6 +114,7 @@ EOT
         '#type' => 'button',
         '#field' => $i,
         '#value' => '-',
+        '#attributes' => array('title' => t('Remove field')),
         '#name' => 'remove-field-' . $i,
         '#ahah' => array(
           'path' => MENU_SCHOLAR_ADVANCED_SEARCH_REMOVE_FIELD,
@@ -135,18 +137,18 @@ EOT
         '#type' => 'select',
         '#default_value' => isset($values['sort']) ? $values['sort'] : NULL,
         '#options' => array(
-          NULL => t('Relevance'),
-          'coh_sort_title' => t('Title'),
-          'coh_sort_date' => t('Date Added'),
+          'score' => t('Relevance'),
+          'mods_title_mlt' => t('Title'),
+          'fgs_createdDate_s' => t('Date Added'),
         ),
       ),
       'order' => array(
         '#title' => t('Order'),
         '#type' => 'select',
-        '#default_value' => isset($values['order']) ? $values['order'] : 'asc',
+        '#default_value' => isset($values['order']) ? $values['order'] : 'desc',
         '#options' => array(
-          'asc' => t('Ascending'),
           'desc' => t('Descending'),
+          'asc' => t('Ascending'),
         ),
       ),
       'submit' => array(
