@@ -25,7 +25,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     $sort = $_SESSION['scholar']['search']['sort'];
     $order = $_SESSION['scholar']['search']['order'];
     if (!empty($_SESSION['scholar']['search']['sort'])) {
-      $query_processor->solrParams['fl'] = 'PID,mod_fullxml_store,score,mods_title_mlt';
+      $query_processor->solrParams['fl'] = '*,score';
       $query_processor->solrParams['sort'] = $sort .' '. $order;
       $query_processor->executeQuery();
     }
@@ -137,12 +137,12 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
   foreach ($results->response->docs as $doc) {
     $pid = $doc->PID;
     $result = '';
-      $pids[] = $pid;
-      $result = theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
-      $table['rows'][] = array(
-        '#pid' => $pid,
-        'result' => array('#value' => $result),
-      );
+    $pids[] = $pid;
+    $result = theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
+    $table['rows'][] = array(
+      '#pid' => $pid,
+      'result' => array('#value' => $result),
+    );
   }
   $checkboxes = array_fill_keys($pids, '');
   $table['selections'] = array(
