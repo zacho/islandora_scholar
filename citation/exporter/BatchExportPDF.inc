@@ -25,6 +25,8 @@ function citation_exporter_batch_get_pdf_operations(array $pids, $style) {
   citation_exporter_batch_store_pids_in_file($temp_pids_file, $pids);
   $total = count($pids);
   $operations = array();
+  $header_text = variable_get('fedora_repository_title', 'Fedora Repository');
+  $operations[] = array('citation_exporter_batch_add_header_to_text_file', array($temp_text_file, $header_text));
   $operations[] = array('citation_exporter_batch_append_citations_to_text_file', array($temp_pids_file, $total, $temp_text_file, $style));
   $operations[] = array('citation_exporter_batch_convert_text_to_pdf', array($temp_text_file));
   $operations[] = array('citation_exporter_batch_redirect', array($_GET['q']));
@@ -42,9 +44,9 @@ function citation_exporter_batch_get_pdf_operations(array $pids, $style) {
 function citation_exporter_batch_convert_text_to_pdf($filename, array &$context) {
   module_load_include('php', 'citation_exporter', 'class_pdf');
   $text = '';
-  $file = fopen($filename, 'rw');
+  $file = fopen($filename, 'rb');
   while (!feof($file)) {
-    $text .= fread($file, 1024);
+    $text .= fread($file, 4096);
   }
   fclose($file);
   $temp_file_dir = file_directory_temp();

@@ -32,7 +32,7 @@ function citation_exporter_create_pdf($html_input, $output_filename) {
   module_load_include('php', 'citation_exporter', '/lib/tcpdf/tcpdf');
 
   // create new PDF document
-  $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, true, 'UTF-8', false);
+  $pdf = new TCPDF(PDF_PAGE_ORIENTATION, PDF_UNIT, PDF_PAGE_FORMAT, TRUE, 'UTF-8', FALSE, FALSE);
 
   // set document information
   //$pdf->SetCreator(PDF_CREATOR);

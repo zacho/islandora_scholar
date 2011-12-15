@@ -128,7 +128,7 @@ function islandora_bibilgraphy_form_table(array $pids) {
     list($title, $authors) = islandora_bibilgraphy_form_get_title_authors($pid);
     $rows[] = array(
       '#pid' => $pid,
-      'title' => array('#value' => check_plain($title)),
+      'title' => array('#value' => l($title, "fedora/repository/$pid")),
       'author' => array('#value' => check_plain($authors)),
       'remove' => array(
         '#type' => 'submit',
@@ -174,7 +174,7 @@ function islandora_bibliography_form_remove_citation_submit(array $form, array &
   module_load_include('inc', 'islandora_bibliography', 'Bibliography');
   $pid = $form_state['clicked_button']['#pid'];
   Bibliography::RemoveCitation($pid);
-  drupal_set_message(t('Removed Citation'));
+  drupal_set_message(t('Removed citation'));
 }
 
 /**
@@ -217,7 +217,7 @@ function islandora_bibliography_form_remove(array $form, array &$form_state) {
   $selections = array_filter($form_state['values']['table']['selections']);
   $pids = array_keys($selections);
   Bibliography::RemoveCitations($pids);
-  drupal_set_message(t('Removed %num Citation(s)', array('%num' => count($pids))));
+  drupal_set_message(format_plural(count($pids), 'Removed 1 citation', 'Removed @count citations'));
 }
 
 /**

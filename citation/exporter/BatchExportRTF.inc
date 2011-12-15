@@ -24,10 +24,18 @@ function citation_exporter_batch_get_rtf_operations(array $pids, $style) {
   citation_exporter_batch_store_pids_in_file($temp_pids_file, $pids);
   $total = count($pids);
   $operations = array();
+  $header_text = variable_get('fedora_repository_title', 'Fedora Repository');
+  $operations[] = array('citation_exporter_batch_add_header_to_text_file', array($temp_text_file, $header_text));
   $operations[] = array('citation_exporter_batch_append_citations_to_text_file', array($temp_pids_file, $total, $temp_text_file, $style));
   $operations[] = array('citation_exporter_batch_convert_txt_to_rtf', array($temp_text_file));
   $operations[] = array('citation_exporter_batch_redirect', array($_GET['q']));
   return $operations;
+}
+
+function citation_exporter_batch_add_header_to_text_file($file_name, $header, array &$context) {
+  $file = fopen($file_name, 'wb');
+  fwrite($file, "<h2>$header</h2><br/>");
+  fclose($file);
 }
 
 /**
@@ -69,7 +77,7 @@ function _citation_exporter_batch_append_citations_to_text_file(array $pids, $fi
   module_load_include('inc', 'csl', 'CSL');
   $style = CSL::Get($style);
   $citeproc = new citeproc($style->saveXML());
-  $file = fopen($filename, 'a');
+  $file = fopen($filename, 'ab');
   foreach ($pids as $pid) {
     $item = new Fedora_Item($pid);
     if ($item->exists() && isset($item->datastreams['MODS'])) {
@@ -79,7 +87,7 @@ function _citation_exporter_batch_append_citations_to_text_file(array $pids, $fi
         $json = convert_mods_to_citeproc_jsons($mods);
         array_walk_recursive($json, 'convert_mods_to_citeproc_jsons_escape');
         $json = (object) $json;
-        $citation = json_decode(@json_encode($json)); // HACKKKKK!
+        $citation = json_decode(@json_encode($json)); // XXX: HACKKKKK!  (What's its purpose, though? -adam)
         $text = $citeproc->render($citation, 'bibliography');
         if ($file) {
           fwrite($file, $text . "<br/><br/>"); // I know the <br/> look out of place but its cause this is an intermediate document and the rtf class will replace them with newlines.
@@ -101,14 +109,14 @@ function _citation_exporter_batch_append_citations_to_text_file(array $pids, $fi
 function citation_exporter_batch_convert_txt_to_rtf($filename, array &$context) {
   module_load_include('php', 'citation_exporter', 'class_rtf');
   $text = '';
-  $file = fopen($filename, 'rw');
+  $file = fopen($filename, 'rb');
   while (!feof($file)) {
-    $text .= fread($file, 1024);
+    $text .= fread($file, 4096);
   }
   fclose($file);
   $data = json_decode($json);
   $rtf = new rtf();
-  $rtf->addText($text);
+  $rtf->addText(utf8_decode($text));
   /* File */
   $temp_file_dir = file_directory_temp();
   $temp_file_name = file_create_filename("export.rtf", $temp_file_dir);

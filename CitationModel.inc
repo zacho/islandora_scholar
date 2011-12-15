@@ -83,9 +83,6 @@ class CitationModel extends AbstractModel {
         $mods = $this->item->get_datastream_dissemination('MODS');
         $mods = trim($mods);
         if (!empty($mods)) {
-          //$doc = new DOMDocument(); //DOM parsing is expensive, and the resultant object is not used (it's passed into citeproc, which eventually does a $doc->saveXML() and then parses with and uses SimpleXML) in this piece of code, so why bother?
-          //$doc->loadXML($mods);
-          
           $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
         }
       }
