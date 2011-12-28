@@ -19,7 +19,7 @@ class CiteProcJS {
   /**
    * The location of the locale files relative to this module.
    */
-  const LOCALE_DIRECTORY = '/lib/citeproc-js/locale/';
+  const LOCALE_DIRECTORY = '/data/locale/';
   /**
    * The locale's avaliable to this module.
    */
