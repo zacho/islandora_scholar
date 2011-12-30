@@ -3,7 +3,7 @@
     <h3 style="display:inline">
       <?php print t('Citation:') ?>
     </h3> 
-    <select id="style" class="form-select" onchange="jQuery('.citeproc-bibliography').attr('id', this.value); Drupal.attachBehaviors();">
+    <select id="style" class="form-select" onchange="jQuery('.citeproc-bibliography').attr('id', this.value); Drupal.settings.citeproc.refresh = true; Drupal.attachBehaviors();">
       <?php foreach ($styles as $id => $name) : ?>
         <option value="<?php print $id ?>"><?php print $name ?></option>
       <?php endforeach; ?>

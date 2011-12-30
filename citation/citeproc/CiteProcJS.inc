@@ -119,6 +119,7 @@ class CiteProcJS {
    *   The data to store in the drupal settings object.
    */
   private function storeInSettings(array $data) {
+    $data['refresh'] = true;
     drupal_add_js(array('citeproc' => $data), 'setting');
   }
 

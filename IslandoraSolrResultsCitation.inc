@@ -22,9 +22,9 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
   function displayResults(IslandoraSolrQueryProcessor $query_processor, $title = "Search Results", $output = '') {
     module_load_include('inc', 'scholar', 'SearchForm');
     drupal_add_css(drupal_get_path('module', 'scholar') . '/css/Search.css');
-    $sort = $_SESSION['scholar']['search']['sort'];
-    $order = $_SESSION['scholar']['search']['order'];
     if (!empty($_SESSION['scholar']['search']['sort'])) {
+      $sort = $_SESSION['scholar']['search']['sort'];
+      $order = $_SESSION['scholar']['search']['order'];
       $query_processor->solrParams['fl'] = 'PID,mod_fullxml_store';
       $query_processor->solrParams['sort'] = $sort . ' ' . $order;
       $query_processor->executeQuery();
@@ -69,14 +69,16 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
 
 }
 
-function template_preprocess_scholar_search_alt_item(array &$vars)  {
-  $s_doc =& $vars['solr_doc'];
+function template_preprocess_scholar_search_alt_item(array &$vars) {
+  $s_doc = & $vars['solr_doc'];
   $pid = $s_doc->PID;
   $title = $s_doc->mods_title_ms;
-  if (is_array($title)) {$title = $title[0];}
-  
+  if (is_array($title)) {
+    $title = $title[0];
+  }
+
   $vars['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
-  
+
   $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style']);
 }
 
@@ -91,11 +93,11 @@ function template_preprocess_scholar_search_item(array &$variables) {
   if ($item->exists() && isset($item->datastreams['MODS'])) {
     $title = $item->objectProfile->objLabel;
     $variables['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
-    
+
     $style = $variables['style'];
     $cache_id = "citation_{$pid}";
     $cached_raw = cache_get($cache_id);
-    
+
     $bibliography = NULL;
     if (!empty($cached_raw)) {
       $bibliography = citeproc_bibliography_from_raw_array($style, $cached_raw->data);
@@ -106,7 +108,7 @@ function template_preprocess_scholar_search_item(array &$variables) {
       if (!empty($mods)) {
         $doc = new DOMDocument();
         $doc->loadXML($mods);
-        
+
         $bibliography = citeproc_bibliography_from_mods($style, $doc, $cache_id);
       }
     }
@@ -134,12 +136,12 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
   foreach ($results->response->docs as $doc) {
     $pid = $doc->PID;
     $result = '';
-      $pids[] = $pid;
-      $result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style);
-      $table['rows'][] = array(
-        '#pid' => $pid,
-        'result' => array('#value' => $result),
-      );
+    $pids[] = $pid;
+    $result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style);
+    $table['rows'][] = array(
+      '#pid' => $pid,
+      'result' => array('#value' => $result),
+    );
   }
   $checkboxes = array_fill_keys($pids, '');
   $table['selections'] = array(
