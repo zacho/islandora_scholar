@@ -31,7 +31,7 @@ function scholar_browse_by_user_form(array &$form_state) {
     $authors = $doc->{'mods.name_author'};
     $authors = is_string($authors) ? array($authors) : $authors;
     foreach ($authors as $name) {
-      $users[] = $name;
+      $users[$name] = $name;
     }
   }
   sort($users);
