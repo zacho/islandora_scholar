@@ -186,7 +186,7 @@ function scholar_batch_ingest_endnote_document($filename, $collection_pid, $cont
   if (Bibutils::Convert($endnote_filename, 'EndNoteXML', $mods_filename, 'MODS')) {
     scholar_batch_ingest_mods($mods_filename, $collection_pid, $content_model_pid, array('ENDNOTE' => $endnote_filename));
   }
-  //unlink($endnote_filename);
+  //unlink($endnote_filename); Not sure where this is getting deleted.
   unlink($mods_filename);
   $context['sandbox']['progress']++;
   if ($context['sandbox']['progress'] != $context['sandbox']['total']) {
