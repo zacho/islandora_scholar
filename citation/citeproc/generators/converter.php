@@ -69,34 +69,41 @@ function convert_mods_to_citeproc_jsons($mods_in) {
   }
 
   if ($mods instanceof SimpleXMLElement) {
-    //$mods->registerXPathNamespace('mods', 'http://www.loc.gov/mods/v3');
     add_mods_namespace($mods);
     $names = convert_mods_to_citeproc_json_names($mods); // Merge with main object
     $dates = convert_mods_to_citeproc_json_dates($mods);
+    $type = convert_mods_to_citeproc_json_type($mods);
+    $parented = "'$type'='book' or '$type'='chapter' or '$type'='article-journal'";
     $output = array_merge(array(
-    'title' => convert_mods_to_citeproc_json_title($mods),
-    'abstract' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:abstract'),
-    'call-number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:classification'),
-    'collection-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:title'),
-    'container-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:titleInfo/mods:title'),
-    'DOI' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="doi"]'),
-    'edition' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:edition'),
-    'event' => convert_mods_to_citeproc_json_event($mods),
-    'event-place' => convert_mods_to_citeproc_json_event_place($mods),
-    //'genre' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:genre[@authority="marcgt"]'),
-    'ISBN' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="isbn"]'),
-    'volume' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="volume"]/mods:number'),
-    'issue' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="issue"]/mods:number'),
-    'note' => convert_mods_to_citeproc_json_note($mods),
-    'number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:partNumber'),
-    'page' => convert_mods_to_citeproc_json_page($mods),
-    'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher'),
-    'publisher-place' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:place/mods:placeTerm | /mods:mods/mods:relatedItem[@type="host"]/mods:originInfo/mods:place/mods:placeTerm'),
-    'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
-    'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmid"]'),
-    'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"]'),
-    'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"]'),
-    'type' => convert_mods_to_citeproc_json_type($mods)), $names, $dates
+        'title' => convert_mods_to_citeproc_json_title($mods),
+        'abstract' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:abstract'),
+        'call-number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:classification'),
+        'collection-title' => convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:relatedItem[@type='series']/mods:titleInfo/mods:title | 
+            /mods:mods[not($parented)]/mods:relatedItem[@type='host']/mods:titleInfo/mods:title" 
+            //." | /mods:mods[$parented]/mods:relatedItem[@type='host']/mods:relatedItem[@type='host']/mods:titleInfo/mods:title" //Not wanted for books and chapters (Not applicable for journal articles?)
+        ),
+        'container-title' => convert_mods_to_citeproc_json_query($mods, "/mods:mods[$parented]/mods:relatedItem[@type='host']/mods:titleInfo/mods:title"),
+        'DOI' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="doi"]'),
+        'edition' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:edition'),
+        'event' => convert_mods_to_citeproc_json_event($mods),
+        'event-place' => convert_mods_to_citeproc_json_event_place($mods),
+        //'genre' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:genre[@authority="marcgt"]'),
+        'ISBN' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="isbn"]'),
+        'volume' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="volume"]/mods:number'),
+        'issue' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="issue"]/mods:number'),
+        'note' => convert_mods_to_citeproc_json_note($mods),
+        'number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:partNumber'),
+        'page' => convert_mods_to_citeproc_json_page($mods),
+        'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher | /mods:mods/mods:relatedItem[@type="host"]/mods:originInfo/mods:publisher'),
+        'publisher-place' => convert_mods_to_citeproc_json_query($mods, '(/mods:mods/mods:originInfo/mods:place/mods:placeTerm[@type="text"] | /mods:mods/mods:relatedItem[@type="host"]/mods:originInfo/mods:place/mods:placeTerm[@type="text"])[1]'),
+        //'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
+        'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmid"]'),
+        'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"]'),
+        'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"]'),
+        'type' => $type
+      ), 
+      $names, 
+      $dates
     );
     return $output;
   }
@@ -229,31 +236,28 @@ function convert_mods_to_citeproc_json_page(SimpleXMLElement $mods) {
   return $output;
 }
 
-/**
- * Gets the type property for the Citation.
- * 
- * @param SimpleXMLElement $mods
- *   A MODS document.
- * 
- * @return string
- *   The type property for the Citation.
- */
-function convert_mods_to_citeproc_json_type(SimpleXMLElement $mods) {
-  /**
-   * @auth='marcgt' -- marcgt should be the preferred authority
-   * @auth='local'  -- actually better at differentiating some types
-   * not(@auth)     -- unauthoritative types from Bibutils
-   *
-   *  genre == 'book' is especially difficult
-   *  //mods/relatedItem[@type='host']/genre[@authority='marcgt'] == 'book' means "Chapter"
-   *  //mods/genre[@authority='marcgt'] == 'book' means "Book" 
-   *  *UNLESS* //mods/relatedItem[type='host']/titleInfo/title exists
-   *  *OR*     //mods/genre[@authority='local'] == 'bookSection'
-   */
-  module_load_include('inc', 'citeproc', 'generators/mods_csl_type_conversion');
-  module_load_include('inc', 'citeproc', 'generators/marcrelator_conversion');
-  $output = NULL;
-  // First try: item's local marcgt genre.
+function _get_endnote_type(SimpleXMLElement $mods) {
+  $output = '';
+  
+  $type_map = array(
+    'Book Section' => 'chapter',
+    'Book' => 'book',
+    'Edited Book' => 'book',
+    'Journal Article' => 'article-journal',
+    'Working Paper' => 'chapter', //FIXME:  Not sure on this one.  'report' might be better?
+    'Thesis' => 'thesis'
+  );
+  $types = $mods->xpath("/mods:mods/mods:genre[@authority='endnote']");
+  
+  if (!empty($types)) {
+    $type = $types[0];
+    $output = $type_map[(string)$type];
+  }
+  
+  return $output;
+}
+function _get_marcgt_type(SimpleXMLElement $mods) {
+  $output = '';
   $type_marcgt = $mods->xpath("/mods:mods/mods:genre[@authority='marcgt']");
   if (!empty($type_marcgt)) {
     $interim_type =& $type_marcgt[0];
@@ -271,29 +275,75 @@ function convert_mods_to_citeproc_json_type(SimpleXMLElement $mods) {
     else {
       $output = marcgt_to_csl((string)$interim_type);
     }
-    $csl_type = marcgt_to_csl((string)$interim_type);
   }
+  return $output;
+}
+function _get_related_marcgt_type(SimpleXMLElement $mods) {
+  $output = '';
+  
+  $type_marcgt_related = $mods->xpath("/mods:mods/mods:relatedItem/mods:genre[@authority='marcgt']");
+  if (!empty($type_marcgt_related)) {
+    $interim_type = (string) $type_marcgt_related[0];
+    if (!strcasecmp($interim_type, 'book')) {
+      $output = 'chapter';
+    }
+    else {
+      $output = marcgt_to_csl($interim_type);
+    }
+  }
+  
+  return $output;
+}
+function _get_other_types(SimpleXMLElement $mods) {
+  $output = '';
+  
+  $types_local_auth = $mods->xpath("/mods:mods/mods:genre[not(@authority='marcgt' or @authority='endnote')]");
+  while (empty($output) && list( $num, $type ) = each($types_local_auth)) {
+    $interim_type = (string) $type;
+    $output = mods_genre_to_csl_type($interim_type);
+  }
+  
+  return $output;
+}
+/**
+ * Gets the type property for the Citation.
+ * 
+ * @param SimpleXMLElement $mods
+ *   A MODS document.
+ * 
+ * @return string
+ *   The type property for the Citation.
+ */
+function convert_mods_to_citeproc_json_type(SimpleXMLElement $mods) {
+  /**
+   * @auth='endnote'-- seems to map to the CSL types easier
+   * @auth='marcgt' -- marcgt should be the preferred authority
+   * @auth='local'  -- actually better at differentiating some types
+   * not(@auth)     -- unauthoritative types from Bibutils
+   *
+   *  genre == 'book' is especially difficult
+   *  //mods/relatedItem[@type='host']/genre[@authority='marcgt'] == 'book' means "Chapter"
+   *  //mods/genre[@authority='marcgt'] == 'book' means "Book" 
+   *  *UNLESS* //mods/relatedItem[type='host']/titleInfo/title exists
+   *  *OR*     //mods/genre[@authority='local'] == 'bookSection'
+   */
+  module_load_include('inc', 'citeproc', 'generators/mods_csl_type_conversion');
+  module_load_include('inc', 'citeproc', 'generators/marcrelator_conversion');
+  
+  $output = _get_endnote_type($mods);
+  
+  // First try: item's local marcgt genre.
+  if (empty($output)) {
+    $output = _get_marcgt_type($mods);
+  }
+  
   // Second try: item's parent marcgt genre (often applies to the original item itself).
   if (empty($output)) {
-    $type_marcgt_related = $mods->xpath("/mods:mods/mods:relatedItem/mods:genre[@authority='marcgt']");
-    if (!empty($type_marcgt_related)) {
-      $interim_type = (string) $type_marcgt_related[0];
-
-      if (!strcasecmp($interim_type, 'book')) {
-        $output = 'chapter';
-      }
-      else {
-        $output = marcgt_to_csl($interim_type);
-      }
-    }
+    $output = _get_related_marcgt_type($mods);
   }
   // Third try: other authority types (most likely Zotero local)
   if (empty($output)) {
-    $types_local_auth = $mods->xpath("/mods:mods/mods:genre[not(@authority='marcgt')]");
-    while (empty($output) && list( $num, $type ) = each($types_local_auth)) {
-      $interim_type = (string) $type;
-      $output = mods_genre_to_csl_type($interim_type);
-    }
+    $output = _get_other_types($mods);
   }
   return $output;
 }

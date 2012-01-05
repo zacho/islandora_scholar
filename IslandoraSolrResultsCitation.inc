@@ -165,7 +165,7 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
           '#length' => 50,
           '#options' => array(
             'RIS' => 'RIS',
-            'RTF' => 'RTF',
+            //'RTF' => 'RTF',
             'PDF' => 'PDF',
           )
         ),
@@ -205,6 +205,11 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
           '#value' => t('Save Selected'),
           '#submit' => array('scholar_search_results_form_save_to_bibliography'),
         ),
+        'goto biblio' => array(
+          '#type' => 'submit',
+          '#value' => t('Go to saved Bibliography'),
+          '#submit' => array('scholar_redirect_to_bibliography')
+        )
       ),
     ),
     'pager' => array(
@@ -212,6 +217,10 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
     ),
     'table' => $table,
   );
+}
+
+function scholar_redirect_to_bibliography(array $form, array &$form_state) {
+  drupal_goto('bibliography');
 }
 
 /**

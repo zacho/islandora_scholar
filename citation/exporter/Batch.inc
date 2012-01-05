@@ -99,7 +99,10 @@ function citation_exporter_batch_get_num_pids_from_file($filename, $num = 1) {
  * @param type $redirect
  * @param array $context 
  */
-function citation_exporter_batch_redirect($redirect, array &$context) {
+function citation_exporter_batch_redirect($redirect, array $file_to_unlink, array &$context) {
+  foreach ($file_to_unlink as $file) {
+    unlink($file);
+  }
   $context['results']['redirect'] = $redirect;
 }
 

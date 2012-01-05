@@ -31,8 +31,7 @@ function islandora_bibliography_form(array &$form_state) {
     return array(
       'fieldset' => array(
         '#type' => 'fieldset',
-        '#title' => t('My Citations'),
-        '#description' => t('<p>Here you can remove or export citations from your bibliography.</p>'),
+        //'#title' => t('My Citations'),
         'table' => islandora_bibilgraphy_form_table($pids),
         'preview_title' => array(
           '#value' => t('Preview Citations'),
@@ -65,7 +64,7 @@ function islandora_bibliography_form(array &$form_state) {
           '#length' => 50,
           '#options' => array(
             'RIS' => 'RIS',
-            'RTF' => 'RTF',
+            //'RTF' => 'RTF',
             'PDF' => 'PDF',
           )
         ),
@@ -270,6 +269,9 @@ function islandora_bibilgraphy_form_get_mods($pid) {
  *   HTML that renders a table of settings for datastreams.
  */
 function theme_islandora_bibliography_form_table(array $element) {
+  
+  $caption = t('Remove or export citations from your bibliography');
+
   $rows = array();
   foreach (element_children($element['rows']) as $child) {
     $setting = $element['rows'][$child];
@@ -287,5 +289,5 @@ function theme_islandora_bibliography_form_table(array $element) {
     );
   }
   $attributes = isset($element['#id']) ? array('id' => $element['#id']) : NULL;
-  return theme_table($element['#header'], $rows, $attributes);
+  return theme_table($element['#header'], $rows, $attributes, $caption);
 }

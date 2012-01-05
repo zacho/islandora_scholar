@@ -127,7 +127,8 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
          'core_facility' => '/mods:mods/mods:note[@type="core facilities"]',
          'source_system' => '/mods:mods/mods:recordInfo/mods:recordOrigin',
          'ccsg_program' => 'string()', // @todo
-         'peer_reviewed' => '/mods:mods/mods:note[@type="peer reviewed"]'
+         'peer_reviewed' => '/mods:mods/mods:note[@type="peer reviewed"]',
+         'url' => '/mods:mods/mods:location/mods:url'
       );
       
       foreach ($parts as $key => $xpath) {

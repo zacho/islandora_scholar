@@ -171,23 +171,37 @@ function scholar_bulk_ingest_form_submit(array &$form, array &$form_state) {
 function scholar_batch_ingest_endnote_document($filename, $collection_pid, $content_model_pid, array &$context) {
   module_load_include('inc', 'bibutils', 'Batch');
   module_load_include('inc', 'bibutils', 'Bibutils');
+  
   if (empty($context['sandbox'])) {
-    $context['sandbox']['progress'] = 0;
-    $context['sandbox']['total'] = bibutils_batch_get_number_endnote_records($filename);
+    $context['sandbox'] = array(
+      'progress' => 0,
+      'total' => bibutils_batch_get_number_endnote_records($filename)
+    );    
   }
+  $sandbox =& $context['sandbox'];
+  
   $temp_file_dir = file_directory_temp();
   $mods_filename = file_create_filename("mods.xml", $temp_file_dir);
   $endnote_filename = file_create_filename("endnote.xml", $temp_file_dir);
+  
   $record = bibutils_batch_get_endnote_record($filename); // Get Single EndNote XML Record
   $record->save($endnote_filename);
+  
   if (Bibutils::Convert($endnote_filename, 'EndNoteXML', $mods_filename, 'MODS')) {
     scholar_batch_ingest_mods($mods_filename, $collection_pid, $content_model_pid, array('ENDNOTE' => $endnote_filename));
   }
-  unlink($endnote_filename);
-  unlink($mods_filename);
-  $context['sandbox']['progress']++;
-  if ($context['sandbox']['progress'] != $context['sandbox']['total']) {
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['total'];
+  
+  file_delete($endnote_filename);
+  file_delete($mods_filename);
+  
+  $remaining = bibutils_batch_get_number_endnote_records($filename);
+  $sandbox['progress']++;
+  if ($sandbox['progress'] != $sandbox['total']) {
+    $context['finished'] = $sandbox['progress'] / $sandbox['total'];
+  }
+  elseif ($sandbox['total'] - $sandbox['progress'] === 0) {
+    //We're done; delete input file.
+    file_delete($filename);
   }
 }
 
@@ -206,26 +220,37 @@ function scholar_batch_ingest_endnote_document($filename, $collection_pid, $cont
 function scholar_batch_ingest_ris_document($filename, $collection_pid, $content_model_pid, array &$context) {
   module_load_include('inc', 'bibutils', 'Batch');
   module_load_include('inc', 'bibutils', 'Bibutils');
+  
   if (empty($context['sandbox'])) {
-    $context['sandbox']['progress'] = 0;
-    $context['sandbox']['total'] = bibutils_batch_get_number_ris_records($filename);
+    $context['sandbox'] = array(
+      'progress' => 0,
+      'total' => bibutils_batch_get_number_ris_records($filename));
   }
+  $sandbox =& $context['sandbox'];
+  
   $temp_file_dir = file_directory_temp();
   $mods_filename = file_create_filename("mods.xml", $temp_file_dir);
   $ris_filename = file_create_filename("ris.txt", $temp_file_dir);
+  
   $record = bibutils_batch_get_ris_record($filename); // Get Single EndNote XML Record
   $file = fopen($ris_filename, 'w');
   fwrite($file, $record);
   fclose($file);
+  
   if (Bibutils::Convert($ris_filename, 'RIS', $mods_filename, 'MODS')) {
     scholar_batch_ingest_mods($mods_filename, $collection_pid, $content_model_pid, array('RIS' => $ris_filename));
   }
+  
   // Remove the files.
-  unlink($ris_filename);
-  unlink($mods_filename);
-  $context['sandbox']['progress']++;
-  if ($context['sandbox']['progress'] != $context['sandbox']['total']) {
-    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['total'];
+  file_delete($ris_filename);
+  file_delete($mods_filename);
+  $sandbox['progress']++;
+  if ($sandbox['progress'] != $sandbox['total']) {
+    $context['finished'] = $sandbox['progress'] / $sandbox['total'];
+  }
+  elseif ($sandbox['total'] - $sandbox['progress'] === 0) {
+    //We're done; delete input file.
+    file_delete($filename);
   }
 }
 
@@ -269,12 +294,12 @@ function scholar_batch_ingest_mods_guess_title(DOMDocument $mods) {
   $default_title = t('Default Title (Please Correct)');
   $xpath = new DOMXPath($mods);
   $xpath->registerNamespace('mods', 'http://www.loc.gov/mods/v3');
-  $results = $xpath->query('/mods:mods/mods:titleInfo[not(@type)]/mods:title[1]'); // Ingnore extras.
+  $results = $xpath->query('/mods:mods/mods:titleInfo[not(@type) and mods:title][1]/mods:title[1]'); // Ingnore extras.
   if ($results->length == 1) {
     $title = $results->item(0);
     return $title->textContent;
   }
-  $results = $xpath->query('/mods:mods/mods:titleInfo/mods:title[1]'); // Ingnore extras, can be abbr or whatever.
+  $results = $xpath->query('/mods:mods/mods:titleInfo[mods:title][1]/mods:title[1]'); // Ingnore extras, can be abbr or whatever.
   if ($results->length > 0) { // Can be more than one.
     $title = $results->item(0); // Get first
     return $title->textContent;

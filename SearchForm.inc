@@ -139,7 +139,7 @@ EOT
         '#options' => array(
           'score' => t('Relevance'),
           'mods_title_mlt' => t('Title'),
-          'fgs_createdDate_s' => t('Date Added'),
+          'mods_dateIssued_s' => t('Date Issued'),
         ),
       ),
       'order' => array(

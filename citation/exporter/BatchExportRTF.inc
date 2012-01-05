@@ -28,7 +28,7 @@ function citation_exporter_batch_get_rtf_operations(array $pids, $style) {
   $operations[] = array('citation_exporter_batch_add_header_to_text_file', array($temp_text_file, $header_text));
   $operations[] = array('citation_exporter_batch_append_citations_to_text_file', array($temp_pids_file, $total, $temp_text_file, $style));
   $operations[] = array('citation_exporter_batch_convert_txt_to_rtf', array($temp_text_file));
-  $operations[] = array('citation_exporter_batch_redirect', array($_GET['q']));
+  $operations[] = array('citation_exporter_batch_redirect', array($_GET['q'], array($temp_text_file, $temp_pids_file)));
   return $operations;
 }
 
@@ -116,11 +116,11 @@ function citation_exporter_batch_convert_txt_to_rtf($filename, array &$context) 
   fclose($file);
   $data = json_decode($json);
   $rtf = new rtf();
-  $rtf->addText(utf8_decode($text));
+  $rtf->addText($text);
   /* File */
   $temp_file_dir = file_directory_temp();
   $temp_file_name = file_create_filename("export.rtf", $temp_file_dir);
-  $file = fopen($temp_file_name, 'w');
+  $file = fopen($temp_file_name, 'wb');
   if ($file !== FALSE) {
     $document = $rtf->getDocument();
     fwrite($file, $document);
