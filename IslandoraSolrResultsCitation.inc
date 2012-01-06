@@ -21,6 +21,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
    */
   function displayResults(IslandoraSolrQueryProcessor $query_processor, $title = "Search Results", $output = '') {
     module_load_include('inc', 'scholar', 'SearchForm');
+    drupal_set_title(t('Search Publications'));
     drupal_add_css(drupal_get_path('module', 'scholar') . '/css/Search.css');
     if (!empty($_SESSION['scholar']['search']['sort'])) {
       $sort = $_SESSION['scholar']['search']['sort'];
