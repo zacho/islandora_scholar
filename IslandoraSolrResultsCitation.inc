@@ -157,7 +157,7 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
   ); //'CSV' => 'CSV'
   if ($user->uid == 1) { // Only admin can do.
     $options['CSV'] = 'CSV';
-  } 
+  }
   return array(
     'controls' => array(
       '#type' => 'markup',
@@ -220,7 +220,7 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
  * Check to see if some thing has been selected.
  */
 function scholar_search_results_form_validate(array $form, array &$form_state) {
-  // @todo prevent submission with more then.
+// @todo prevent submission with more then.
 }
 
 /**
@@ -257,7 +257,13 @@ function scholar_search_results_form_save_to_bibliography(array $form, array &$f
   }
   $count = Bibliography::AddCitations($pids);
   $form_state['storage'] = NULL;
-  drupal_set_message(t('Added %num Citation(s)', array('%num' => $count)));
+  if ($count > 0) {
+    drupal_set_message(t('Added %num Citation(s)', array('%num' => $count)));
+  }
+  $existed = count($pids) - $count;
+  if ($existed > 0) {
+    drupal_set_message(t('%num Citation(s) Already Present', array('%num' => $existed)));
+  }
 }
 
 function scholar_search_results_form_export(array $form, array &$form_state) {
