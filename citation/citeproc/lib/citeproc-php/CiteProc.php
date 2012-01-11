@@ -173,31 +173,27 @@ class csl_element extends csl_collection {
     unset($this->attributes[$name]);
   }
 
-  function &__get($name = NULL) {
-    $null = NULL;
+  function __get($name = NULL) {
     if (array_key_exists($name, $this->attributes)) {
       return $this->attributes[$name];
     }
-    return $null;
-
+    return NULL;
   }
 
   function set_attributes($dom_node) {
     $att = array();
     $element_name = $dom_node->nodeName;
-    if (isset($dom_node->attributes->length)) {
-      for ($i=0; $i < $dom_node->attributes->length; $i++) {
-        $value = $dom_node->attributes->item($i)->value;
-        $name  = str_replace(' ', '_', $dom_node->attributes->item($i)->name);
-        if ($name == 'type' ) {
-          $value = $this->citeproc->map_type($value);
-        }
-
-        if (($name == 'variable'  || $name == 'is-numeric') && $element_name != 'label') {
-          $value = $this->citeproc->map_field($value);
-        }
-        $this->{$name}  = $value;
+    foreach ($dom_node->attributes as $attribute) {
+      $value = $attribute->value;
+      $name  = str_replace(' ', '_', $attribute->name);
+      if ($name == 'type' ) {
+        $value = $this->citeproc->map_type($value);
       }
+
+      if (($name == 'variable'  || $name == 'is-numeric') && $element_name != 'label') {
+        $value = $this->citeproc->map_field($value);
+      }
+      $this->{$name}  = $value;
     }
   }
 
@@ -261,23 +257,35 @@ class csl_format extends csl_rendering_element {
     $this->format  = '';
     if (isset($this->quotes)) {
       $this->quotes = array();
-      $this->quotes['punctuation-in-quote'] = $this->citeproc->get_locale('style_option', 'punctuation-in-quote');
-      $this->quotes['open-quote'] = $this->citeproc->get_locale('term', 'open-quote');
-      $this->quotes['close-quote'] = $this->citeproc->get_locale('term', 'close-quote');
-      $this->quotes['open-inner-quote'] = $this->citeproc->get_locale('term', 'open-inner-quote');
-      $this->quotes['close-inner-quote'] = $this->citeproc->get_locale('term', 'close-inner-quote');
+      $qs = array(
+        'style_option' => 'punctuation-in-quote',
+        'term' => 'open-quote',
+        'term' => 'close-quote',
+        'term' => 'open-inner-quote',
+        'term' => 'close-inner-quote'
+      );
+      foreach($qs as $type => $part) {
+        $this->quotes[$part] = $this->citeproc->get_locale($type, $part);
+      }
       $this->no_op = FALSE;
     }
     if (isset($this->{'prefix'})) $this->no_op = FALSE;
     if (isset($this->{'suffix'})) $this->no_op = FALSE;
     if (isset($this->{'display'})) $this->no_op = FALSE;
 
-    $this->format .= (isset($this->{'font-style'}))      ? 'font-style: ' . $this->{'font-style'} . ';' : '';
-    $this->format .= (isset($this->{'font-family'}))     ? 'font-family: ' . $this->{'font-family'} . ';' : '';
-    $this->format .= (isset($this->{'font-weight'}))     ? 'font-weight: ' . $this->{'font-weight'} . ';' : '';
-    $this->format .= (isset($this->{'font-variant'}))    ? 'font-variant: ' . $this->{'font-variant'} . ';' : '';
-    $this->format .= (isset($this->{'text-decoration'})) ? 'text-decoration: ' . $this->{'text-decoration'} . ';' : '';
-    $this->format .= (isset($this->{'vertical-align'}))  ? 'vertical-align: ' . $this->{'vertical-align'} . ';' : '';
+    $formats = array(
+      'font-style',
+      'font-family',
+      'font-weight',
+      'font-variant',
+      'text-decoration',
+      'vertical-align'
+    );
+    foreach($formats as $form) {
+      $this->format .= isset($this->{$form})?
+        "{$form}: {$this->{$form}};":
+        '';
+    }
     // $this->format .= (isset($this->{'display'})  && $this->{'display'}  == 'indent')  ? 'padding-left: 25px;' : '';
 
     if (isset($this->{'text-case'}) ||
@@ -326,7 +334,7 @@ class csl_format extends csl_rendering_element {
         $suffix = substr($suffix, 1);
       }
     }
-
+    
     if (!empty($this->format) || !empty($this->span_class)) {
       /**
        * Nigelb edits.
@@ -334,11 +342,10 @@ class csl_format extends csl_rendering_element {
       $style = (!empty($this->format)) ? 'style="' . $this->format . '" ' : '';
       $class = (!empty($this->span_class)) ? 'class="' . $this->span_class . '"' : ''; 
       //$text = '<span ' . $class . $style . '>' . $text . '</span>';
-      //var_dump($this->format);
-      switch($this->format) {
-        case 'font-style: italic;':
-          $text = '<i>' . $text . '</i>';
-          break;
+
+      $format_stuff = explode(';', $this->format); //Was previously just switching on format; however, format can contain multiple statements (delimited by semi-colons).  Let's reflect this by exploding and checking for the stuff we care about.
+      if (in_array('font-style: italic', $format_stuff)) {
+        $text = '<i>'. $text .'</i>';
       }
     }
     $div_class = $div_style = '';
@@ -1080,7 +1087,9 @@ class csl_text extends csl_format {
 
     switch ($this->source) {
       case 'variable':
-        if(!isset($data->{$this->variable}) || empty($data->{$this->variable})) return;
+        if(!isset($data->{$this->variable}) || empty($data->{$this->variable})) {
+          return;
+        }
         $text = $data->{$this->variable}; //$this->data[$this->var];  // include the contents of a variable
         break;
       case 'macro':
@@ -1347,37 +1356,37 @@ class csl_if extends csl_rendering_element {
           if ($data->type == $type) $matches++;
         }
       }
-      if ($match == 'all' && $matches = count($types)) return TRUE;
-      if ($match == 'none' && $matches = 0) return TRUE;
+      if ($match == 'all' && $matches == count($types)) return TRUE;
+      if ($match == 'none' && $matches == 0) return TRUE;
       return FALSE;
     }
-    if (($variables = $this->variable)) {
+    elseif (($variables = $this->variable)) {
       $variables  = explode(' ', $variables);
       $matches = 0;
       foreach ($variables as $var) {
-        if (isset($data->$var) && !empty($data->$var) && $match == 'any') return TRUE;
-        if ((!isset($data->$var) || empty($data->$var)) && $match == 'all') return FALSE;
-        if (isset($data->$var) && !empty($data->$var)) $matches++;
+        if (isset($data->{$var}) && !empty($data->{$var}) && $match == 'any') return TRUE;
+        if ((!isset($data->{$var}) || empty($data->{$var})) && $match == 'all') return FALSE;
+        if (isset($data->{$var}) && !empty($data->{$var})) $matches++;
       }
       if ($match == 'all' && $matches = count($variables)) return TRUE;
       if ($match == 'none' && $matches = 0) return TRUE;
       return FALSE;
     }
-    if (($is_numeric = $this->{'is-numeric'})) {
+    elseif (($is_numeric = $this->{'is-numeric'})) {
       $variables  = explode(' ', $is_numeric);
       $matches = 0;
       foreach ($variables as $var) {
-        if (isset($data->$var)) {
-          if (is_numeric($data->$var) && $match == 'any') return TRUE;
-          if (!is_numeric($data->$var)) {
-            if (preg_match('/(?:^\d+|\d+$)/', $data->$var)) {
+        if (isset($data->{$var})) {
+          if (is_numeric($data->{$var}) && $match == 'any') return TRUE;
+          if (!is_numeric($data->{$var})) {
+            if (preg_match('/(?:^\d+|\d+$)/', $data->{$var})) {
               $matches++;
             }
             elseif ($match == 'all') {
               return FALSE;
             }
           }
-          if (is_numeric($data->$var)) $matches++;
+          if (is_numeric($data->{$var})) $matches++;
 
         }
       }
