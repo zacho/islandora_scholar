@@ -210,7 +210,7 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
  * @param $solr_mods_field  A field in the Solr object, which holds the entire contents of the MODS document (with entities escaped)
  * @returm The citation, or an empty string.
  */
-function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mods_fullxml_store') {
+function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mods_fullxml_store', $format='js') {
   $pid = $doc->PID;
   $times = array();
 
@@ -224,42 +224,93 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
       $style = citeproc_style(variable_get('islandora_fjm_recent_additions_csl', $styles[0])); //@todo:  Specify a default CSL, with a different variable name.
     }
     
-    
-    $bibliograpy = NULL;
-    if (!empty($cache_raw)) {
-      $bibliography = citeproc_bibliography_from_raw_array($style, $cache_raw->data);
-    }
-    else {
-      $mods = '';
-      
-      if (isset($doc->{$solr_mods_field})) {
-        $mods = trim($doc->{$solr_mods_field});
-      }
-     
-      if (empty($mods)) {
-        //Try to get from Fedora...
-        module_load_include('inc', 'fedora_repository', 'api/fedora_item');
-        array_push($times, microtime(TRUE));
-        $item = new Fedora_Item($pid);
-        if ($item->exists() && $item->datastreams['MODS']) {
-          $mods = trim($item->get_datastream_dissemination('MODS'));
+    switch($format) {
+      case 'text': //Fallthrough
+      case 'php':
+        $data_array = NULL;
+        if (!empty($cache_raw)) {
+          $data_array = $cache_raw->data;
         }
-      }
-      else {
-        //Do nothing; got MODS from Solr.
-      }
+        else {
+          $mods = '';
+          
+          if (isset($doc->{$solr_mods_field})) {
+            $mods = trim($doc->{$solr_mods_field});
+          }
+         
+          if (empty($mods)) {
+            //Try to get from Fedora...
+            module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+            array_push($times, microtime(TRUE));
+            $item = new Fedora_Item($pid);
+            if ($item->exists() && $item->datastreams['MODS']) {
+              $mods = trim($item->get_datastream_dissemination('MODS'));
+            }
+          }
+          else {
+            //Do nothing; got MODS from Solr.
+          }
 
-      if (!empty($mods)) { 
-        $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
-      }
-      else {
-        watchdog('islandora_fjm', 'Failed loading MODS');
-      }
-    }
-    
-    if (!is_null($bibliography)) {
-      $toReturn = $bibliography->render();
-      return $toReturn;
+          if (!empty($mods)) { 
+            module_load_include('php', 'citeproc', 'generators/converter');
+            $data_array = convert_mods_to_citeproc_jsons($mods);
+          }
+          else {
+            watchdog('islandora_fjm', 'Failed loading MODS');
+          }
+        }
+        
+        if (!is_null($data_array)) {
+          module_load_include('php', 'citeproc', 'generators/converter');
+          module_load_include('php', 'citeproc', 'lib/citeproc-php/CiteProc');
+          $citeproc = is_string($style)?
+            new citeproc($style):
+            new citeproc($style->toJSON());
+          
+          array_walk_recursive($data_array, 'convert_mods_to_citeproc_jsons_escape');
+          $data_object = _citeproc_array_to_object($data_array);
+          //dd($data_object);
+          return $citeproc->render($data_object, 'bibliography');
+        }
+      break;
+      case 'js':
+      default:
+        $bibliograpy = NULL;
+        if (!empty($cache_raw)) {
+          $bibliography = citeproc_bibliography_from_raw_array($style, $cache_raw->data);
+        }
+        else {
+          $mods = '';
+          
+          if (isset($doc->{$solr_mods_field})) {
+            $mods = trim($doc->{$solr_mods_field});
+          }
+         
+          if (empty($mods)) {
+            //Try to get from Fedora...
+            module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+            array_push($times, microtime(TRUE));
+            $item = new Fedora_Item($pid);
+            if ($item->exists() && $item->datastreams['MODS']) {
+              $mods = trim($item->get_datastream_dissemination('MODS'));
+            }
+          }
+          else {
+            //Do nothing; got MODS from Solr.
+          }
+
+          if (!empty($mods)) { 
+            $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
+          }
+          else {
+            watchdog('islandora_fjm', 'Failed loading MODS');
+          }
+        }
+        
+        if (!is_null($bibliography)) {
+          $toReturn = $bibliography->render();
+          return $toReturn;
+        }
     }
   }
   return '';
