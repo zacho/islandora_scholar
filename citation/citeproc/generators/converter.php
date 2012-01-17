@@ -546,8 +546,9 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
 }
 
 function _try_parse_date(&$output, $date_string) {
-  //FIXME:  We assume ISO 8601...
-  if (($parsed = date_parse_from_format(DATE_ISO8601, $date_string))) {
+  //FIXME:  Need a more reliable way to get the date info...
+  $date_string = '/^'. preg_quote($date_string) .'/';
+  if (FALSE && ($parsed = date_parse($date_string))) {
     //dd($parsed, 'Parsed date');
     $output['date-parts'] = array(
       array(
