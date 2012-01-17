@@ -84,11 +84,8 @@ function _citation_exporter_batch_append_citations_to_text_file(array $pids, $fi
       $mods = $item->get_datastream_dissemination('MODS');
       $mods = trim($mods);
       if (!empty($mods)) {
-        $json = convert_mods_to_citeproc_jsons($mods);
-        array_walk_recursive($json, 'convert_mods_to_citeproc_jsons_escape');
-        $json = (object) $json;
-        $citation = json_decode(@json_encode($json)); // XXX: HACKKKKK!  (What's its purpose, though? -adam)
-        $text = $citeproc->render($citation, 'bibliography');
+        $json = _citeproc_array_to_object(convert_mods_to_citeproc_jsons($mods));
+        $text = $citeproc->render($json, 'bibliography');
         if ($file) {
           fwrite($file, $text . "<br/><br/>"); // I know the <br/> look out of place but its cause this is an intermediate document and the rtf class will replace them with newlines.
         }
