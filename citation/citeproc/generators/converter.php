@@ -11,15 +11,15 @@
  */
 
 /**
- * Converts the MODS to a JSON object that repersents a Citataion.
+ * Converts the MODS to a JSON object that represents a Citataion.
  * 
  * @param string $mods
  *   A MODS Document.
- * @param int $id
+ * @param mixed $key within the array.
  *   The id of the citation object to create.
  * 
  * @return string
- *   A JSON encoded string, that repersents the Citataion.
+ *   A JSON encoded string, that represents the Citataion.
  */
 function convert_mods_to_citeproc_jsons_escape(&$item, $key) {
   if (is_string($item)) {
@@ -44,6 +44,31 @@ function add_mods_namespace(SimpleXMLElement &$mods) {
   
   if (array_key_exists('mods', $namespaces) === FALSE) {
     $mods->registerXPathNamespace('mods', $used_namespace);
+  }
+}
+
+/**
+ * Coerce data into the proper JSON-like format, recursively.
+ */
+function _citeproc_array_to_object($in) {
+  if (!is_array($in)) {
+    return $in;
+  }
+  elseif (count($in) > 0 && count(array_filter(array_keys($in), 'is_int')) == count($in)) {
+    foreach ($in as &$value) {
+      $value = _citeproc_array_to_object($value);
+    }
+    return $in;
+  }
+  elseif (count($in) > 0 && count(array_filter(array_keys($in), 'is_string')) == count($in)) {
+    $obj = new stdClass();
+    foreach ($in as $key=>$val) {
+      $obj->$key = _citeproc_array_to_object($val);
+    }
+    return $obj;
+  }
+  else {
+    return FALSE;
   }
 }
 
@@ -520,6 +545,23 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
   return $default_role;
 }
 
+function _try_parse_date(&$output, $date_string) {
+  //FIXME:  We assume ISO 8601...
+  if (($parsed = date_parse_from_format(DATE_ISO8601, $date_string))) {
+    //dd($parsed, 'Parsed date');
+    $output['date-parts'] = array(
+      array(
+        $parsed['year'],
+        $parsed['month'],
+        $parsed['day']
+      )
+    );
+  }
+  else {
+    $output['raw'] = $date_string;
+  }
+}
+
 /**
  * Get the dates.
  */
@@ -527,15 +569,17 @@ function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   $output = array();
   $date_captured = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
   if (!empty($date_captured)) {
-    $output['accessed']['raw'] = $date_captured;
+    _try_parse_date($output['accessed'], $date_captured);
   }
+  
   $date_issued = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued");
   if (!empty($date_issued)) {
-    $output['issued']['raw'] = $date_issued;
+    _try_parse_date($output['issued'], $date_issued);
   }
+  
   $date_created = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated");
   if (!empty($date_created) && empty($output['issued'])) {
-    $output['issued']['raw'] = $date_created;
+    _try_parse_date($output['issued'], $date_created);
   }
   return $output;
 }
