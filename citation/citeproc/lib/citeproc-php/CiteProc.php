@@ -899,7 +899,6 @@ class csl_date extends csl_format {
             unset($locale_elements[$key]);
           }
         }
-
       }
       else {
         $this->elements = $locale_elements;
@@ -918,7 +917,7 @@ class csl_date extends csl_format {
     $text = '';
 
     if (($var = $this->variable) && isset($data->{$var})) {
-      $date = $data->{$var}->{'date-parts'}[0];
+      $date = $data->{$var}->{'date-parts'}[0]; //TODO:  This only deals with the first datepart; should be able to specify a range...  Also, might be a good idea to mirror the abiblity to handle 'raw' dates...
       foreach ($this->elements as $element) {
         $date_parts[] = $element->render($date, $mode);
       }
