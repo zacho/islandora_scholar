@@ -919,7 +919,7 @@ class csl_date extends csl_format {
     if (($var = $this->variable) && isset($data->{$var})) {
       $date_data =& $data->{$var}; 
       $date = NULL;
-      //$date = $date_data->{'date-parts'}[0]; //TODO:  This only deals with the first datepart; should be able to specify a range...
+      //$date = $date_data->{'date-parts'}[0]; 
       if (isset($date_data->{'raw'})) {
         //dd($data->{$var}, 'Data');
         $date = $date_data->{'raw'};
@@ -930,17 +930,21 @@ class csl_date extends csl_format {
         $date = $parser->parse($date);
         //dd($date, 'Parsed date');
       }
-      else {
-        $date = $date_data->date_parts[0];
+      
+      //TODO:  This only deals with the first datepart; should be able to specify a range...
+      if (empty($date) && !empty($date_data->date_parts[0])) {  //Not raw, and date_parts in input
+        $date = $date->date_parts[0]; 
+      }
+      elseif (is_array($date) && array_key_exists('date-parts', $date)) { //Was raw, get the parsed date-parts
+        $date = $date['date-parts'][0];
       }
       
-      if (array_key_exists('literal', $date)) {
+      if (is_array($date) && array_key_exists('literal', $date)) {
         $text = $date['literal'];
       }
       elseif (is_object($date) && isset($date->literal)) {
         $text = $date->literal;
       }
-      
       
       if (empty($text) && !empty($date)) {
         foreach ($this->elements as $element) {
