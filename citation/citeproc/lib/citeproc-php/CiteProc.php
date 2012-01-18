@@ -917,12 +917,39 @@ class csl_date extends csl_format {
     $text = '';
 
     if (($var = $this->variable) && isset($data->{$var})) {
-      $date = $data->{$var}->{'date-parts'}[0]; //TODO:  This only deals with the first datepart; should be able to specify a range...  Also, might be a good idea to mirror the abiblity to handle 'raw' dates...
-      foreach ($this->elements as $element) {
-        $date_parts[] = $element->render($date, $mode);
+      $date_data =& $data->{$var}; 
+      $date = NULL;
+      //$date = $date_data->{'date-parts'}[0]; //TODO:  This only deals with the first datepart; should be able to specify a range...
+      if (isset($date_data->{'raw'})) {
+        //dd($data->{$var}, 'Data');
+        $date = $date_data->{'raw'};
+        //dd($date, 'Raw date');
+        require_once(dirname(__FILE__) .'/CSL_Dateparser.php');
+        $parser = CSL_DateParser::getInstance($this->elements);
+        $parser->returnAsArray();
+        $date = $parser->parse($date);
+        //dd($date, 'Parsed date');
       }
-      $text = implode('', $date_parts);
-    }else {
+      else {
+        $date = $date_data->date_parts[0];
+      }
+      
+      if (array_key_exists('literal', $date)) {
+        $text = $date['literal'];
+      }
+      elseif (is_object($date) && isset($date->literal)) {
+        $text = $date->literal;
+      }
+      
+      
+      if (empty($text) && !empty($date)) {
+        foreach ($this->elements as $element) {
+          $date_parts[] = $element->render($date, $mode);
+        }
+        $text = implode('', $date_parts);
+      }
+    }
+    else {
       $text = $this->citeproc->get_locale('term', 'no date');
     }
 
