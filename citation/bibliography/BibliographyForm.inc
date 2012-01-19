@@ -123,6 +123,7 @@ function islandora_bibilgraphy_form_table(array $pids) {
       '#options' => array_fill_keys($pids, ''),
     ),
   );
+  $row_count = 0;
   $rows = &$table['rows'];
   foreach ($pids as $pid) {
     list($title, $authors) = islandora_bibilgraphy_form_get_title_authors($pid);
@@ -133,10 +134,12 @@ function islandora_bibilgraphy_form_table(array $pids) {
       'remove' => array(
         '#type' => 'submit',
         '#value' => t('Remove'),
+        '#name' => 'remove-citation' . $row_count, // Give a unique name to each button
         '#pid' => $pid,
         '#submit' => array('islandora_bibliography_form_remove_citation_submit')
       )
     );
+    $row_count++;
   }
   return $table;
 }
