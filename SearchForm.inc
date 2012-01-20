@@ -100,8 +100,9 @@ EOT
         '#attributes' => array('style' => 'visibility:hidden;position:fixed;top:-1000px;right:-1000px;')
       ),
       'add' => array(
-        '#type' => 'button',
+        '#type' => 'submit',
         '#value' => '+',
+        '#name' => 'add-field-' . $i,
         '#ahah' => array(
           'path' => MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD,
           'wrapper' => 'scholar-search-terms',
