@@ -256,17 +256,18 @@ class csl_format extends csl_rendering_element {
     $this->no_op = TRUE;
     $this->format  = '';
     if (isset($this->quotes)) {
-      $this->quotes = array();
+      $quotes = array();
       $qs = array(
-        'style_option' => 'punctuation-in-quote',
-        'term' => 'open-quote',
-        'term' => 'close-quote',
-        'term' => 'open-inner-quote',
-        'term' => 'close-inner-quote'
+        array('style_option', 'punctuation-in-quote'),
+        array('term', 'open-quote'),
+        array('term', 'close-quote'),
+        array('term', 'open-inner-quote'),
+        array('term', 'close-inner-quote')
       );
-      foreach($qs as $type => $part) {
-        $this->quotes[$part] = $this->citeproc->get_locale($type, $part);
+      foreach($qs as $loc_params) {
+        $quotes[$loc_params[1]] = call_user_func_array(array($this->citeproc, 'get_locale'), $loc_params);
       }
+      $this->quotes = $quotes;
       $this->no_op = FALSE;
     }
     if (isset($this->{'prefix'})) $this->no_op = FALSE;
@@ -298,7 +299,6 @@ class csl_format extends csl_rendering_element {
   }
 
   function format($text) {
-
     if (empty($text) || $this->no_op) return $text;
     if (isset($this->{'text-case'})) {
       switch ($this->{'text-case'}) {
@@ -363,7 +363,8 @@ class csl_format extends csl_rendering_element {
       //return '<div ' . $div_class . $div_style . '>' . $prefix . $text . $suffix . '</div>';
     }
 
-    return $prefix . $text . $suffix;
+    $text = $prefix . $text . $suffix;
+    return $text;
   }
 
 }
@@ -1453,7 +1454,7 @@ class csl_locale  {
   private   $module_path;
 
   function __construct($lang = 'en') {
-    $this->module_path = drupal_get_path('module', 'CiteProc') . '/lib/citeproc-php';
+    $this->module_path = drupal_get_path('module', 'citeproc') . '/lib/citeproc-php';
     $this->locale = new SimpleXMLElement($this->get_locales_file_name($lang));
     if ($this->locale) {
       $this->locale->registerXPathNamespace('cs', 'http://purl.org/net/xbiblio/csl');
@@ -1524,11 +1525,11 @@ class csl_locale  {
         $plural = $arg3 ? "/cs:$arg3" : '';
         if ($this->style_locale) {
           $term = @$this->style_locale->xpath("//locale[@xml:lang='en']/terms/term[@name='$arg1'$form]$plural");
-          if (!$term) {
+          if (empty($term)) {
             $term = @$this->style_locale->xpath("//locale/terms/term[@name='$arg1'$form]$plural");
           }
         }
-        if (!$term) {
+        if (empty($term)) {
           $term = $this->locale->xpath("//cs:term[@name='$arg1'$form]$plural");
         }
         if (isset($term[0])){
