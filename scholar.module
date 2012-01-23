@@ -165,6 +165,114 @@ function scholar_form_content_model_viewer_ingest_metadata_form_alter(array &$fo
   }
 }
 
+function _scholar_update_mods_name_node(&$node, $name_info) {
+  //1. Create new nameparts.
+  $given = $node->ownerDocument->createElement('namePart', $name_info['given']);
+  $given->setAttribute('type', 'given');
+  $family = $node->ownerDocument->createElement('namePart', $name_info['family']);
+  $family->setAttribute('type', 'family');
+  
+  //2. Remove the old nameparts.
+  $toRemove = array();  //It may be possible to remove them directly, I'm not sure...
+  foreach ($node->getElementsByTagName('namePart') as $np) {
+    $toRemove[] = $np;
+  }
+  foreach ($toRemove as $np) {
+    $node->removeChild($np);
+  }
+  
+  //3. Add the new nameparts.
+  $node->appendChild($given);
+  $node->appendChild($family);
+}
+
+function scholar_name_tabs_rels_ext_pusher($form, &$form_state) {
+  //1. Get all of the docs which are related to this person...
+  $person_pid = $form['values']['pid'];
+  $query = <<<EOQ
+PREFIX ir-rel: <info:islandora/ir-relation#>
+SELECT \$obj
+FROM <#ri>
+WHERE {
+  \$obj ir-rel:hasAuthority <info:fedora/$person_pid> .
+}
+EOQ;
+
+  $ri_url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $params = array(
+    'type' => 'tuples',
+    'flush' => 'true',
+    'format' => 'sparql',
+    'lang' => 'sparql',
+    'stream' => 'on',
+    'query' => $query
+  );
+  
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  $sparql_results = new SimpleXMLElement(do_curl_improved($ri_url, $params));
+  
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  
+  $name_info = array();
+  foreach ($form_state['values']['cpfdesc']['general_ident']['ident']['name_entries'] as $name_entry) {
+    $fore = $name_entry['forename'];
+    $sur = $name_entry['surname'];
+    if ($name_entry['primary'] === 'primary') {
+      $name_info['given'] = $fore;
+      $name_info['family'] = $sur;
+    }
+    else {
+      //TODO: implement IDs for other variants, and use them
+    }
+  }
+  
+  //2. For each doc;
+  foreach ($sparql_results->results->result as $result) {
+    $uri = $result->obj->attributes['uri'];
+    $doc_pid = substr($uri, strrpos($uri, '/'));
+    //2.1. load the MODS
+    $item = new Fedora_Item($doc_pid);
+    $mods_raw = $item->get_datastream_dissemination('MODS');
+    $m_xpath = new DOMXPath(new DOMDocument($mods_raw));
+    $m_xpath->registerNamespace('m', 'http://www.loc.gov/mods/v3');
+    //2.2. Update the relevant name entries
+    foreach ($m_xpath->query('//m:name[@type="personal" and @authorityURI="info:islandora/ir-relation#" and @valueURI]') as $name) {
+      $val = $name->attributes['valueURI'];
+      if ($val->value === $person_pid) {
+        //Related to the primary variant
+        _scholar_update_mods_name_node($name, $name_info);
+      }
+      else {
+        //Related to one of the alternatives... Need to identify somehow...
+        //TODO:  Implement
+      }
+    }
+    
+    //2.3. Save the MODS back to the item
+    $xml = $m_xpath->document->saveXML();
+    dd($xml, 'Modified XML');
+    //$item->modify_datastream_by_value($xml, 'MODS', 'MODS Metadata', 'text/xml', FALSE, 'Modified by Islandora Authority Module', FALSE);
+  }
+  //3. ???
+  //4. PROFIT!
+}
+
+function scholar_name_tabs_validator($form, &$form_state) {
+  if ($form_state['values']['content_model_pid'] === 'ir:authorityCModel' && $form_state['values']['dsid'] === 'EAC-CPF') {
+    //Check that there is only one primary name variant.
+    dd($form_state['values'], 'Values');
+    $count = 0;
+    foreach ($form_state['values']['cpfdesc']['general_ident']['ident']['name_entries'] as $entry) {
+      if ($entry['primary'] === 'primary') {
+        $count++;
+      }
+    }
+    if ($count !== 1) {
+      form_set_error('form', t('There must be exactly one primary name variant!'));
+    }
+  }
+}
+
 /**
  * Implements hook_form_alter().
  * 
@@ -179,16 +287,29 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
   if ($form_state['storage']['step'] == 2) {
     $pid = $form['pid']['#value'];
     $item = new Fedora_Item($pid);
-    if ($item->exists() && isset($item->datastreams['MODS'])) {
-      $mods = $item->get_datastream_dissemination('MODS');
-      $mods = trim($mods);
-      if (!empty($mods)) {
-        $doc = new DOMDocument();
-        $doc->loadXML($mods);
-        module_load_include('inc', 'csl', 'CSL');
-        $names = array_keys(CSL::GetNames());
-        $style = citeproc_style($names[0]); //XXX:  This'll break if there're none...
-        $bibliography = citeproc_bibliography_from_mods($style, $doc);
+    //dd($form, 'Form');
+    if ($item->exists()) {
+      if ($form['content_model_pid']['#value'] === 'ir:citationCModel' && $form['dsid']['#value'] === 'MODS' && isset($item->datastreams['MODS'])) { //Should look at which DS the stream is associated with...
+        $mods = $item->get_datastream_dissemination('MODS');
+        $mods = trim($mods);
+        if (!empty($mods)) {
+          $doc = new DOMDocument();
+          $doc->loadXML($mods);
+          module_load_include('inc', 'csl', 'CSL');
+          $names = array_keys(CSL::GetNames());
+          $style = citeproc_style($names[0]); //XXX:  This'll break if there're none...
+          $bibliography = citeproc_bibliography_from_mods($style, $doc);
+          $citation = array('#value' => $bibliography->render());
+          //TODO: Add submit handler to handle creating RELS-EXT relationships (and PDF file?)
+        }
+      }
+      elseif ($form['content_model_pid']['#value'] === 'ir:authorityCModel') {
+        //Add validation handler so as to only have a single primary name variant.
+        $val =& $form['#validate'];
+        $v = 'scholar_name_tabs_validator';
+        if (!in_array($v, $val)) {
+          $val[] = $v;
+        }
       }
     }
     $title = array(
@@ -197,8 +318,7 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
       '#value' => check_plain($form_state['values']['forms']),
       '#suffix' => '</h3>'
     );
-    $citation = array('#value' => $bibliography->render());
-    array_unshift($form, $citation);
+    if(isset($citation)) { array_unshift($form, $citation); }
     array_unshift($form, $title);
     $form['#attributes'] = array('enctype' => 'multipart/form-data'); // Allow the uploading of files.
   }
