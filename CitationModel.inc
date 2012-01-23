@@ -102,6 +102,8 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
   module_load_include('inc', 'csl', 'CSL');
   module_load_include('inc', 'islandora_bibliography', 'CitationForm');
   $pid = $variables['pid'];
+  // Open URL Image
+  $variables['open_url_img'] = url(drupal_get_path('module', 'city_of_hope').'/images/openurl.jpg');
   //$item = new Fedora_Item($pid);
   $model = new CitationModel($pid);
   $item = & $model->item;
@@ -130,6 +132,7 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
         'source_system' => '/mods:mods/mods:recordInfo/mods:recordOrigin',
         'ccsg_program' => 'string()', // @todo
         'peer_reviewed' => '/mods:mods/mods:note[@type="peer reviewed"]',
+        'accessnum' => '/mods:mods/mods:identifier[@type="accessnum"]',
         'url' => '/mods:mods/mods:location/mods:url'
       );
 

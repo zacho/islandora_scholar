@@ -123,7 +123,7 @@ function scholar_bulk_ingest_file_upload_validate(array $element, array &$form_s
     }
     else { // Only support for one file.
       $mime_type = $_FILES['files']['type']['file'];
-      $valid_types = array('text/xml', 'text/plain', 'application/x-research-info-systems');
+      $valid_types = array('text/xml', 'text/plain', 'application/x-research-info-systems', 'application/octet-stream');
       if (array_search($mime_type, $valid_types) === FALSE) {
         form_error($element, t('The upload file is not the correct type. You must upload a "RIS" or "EndNote XML" document.'));
       }

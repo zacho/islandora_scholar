@@ -39,6 +39,8 @@ function citation_exporter_batch_export(array $pids, $style, $file_format) {
     $batch = array(
       'title' => t('Exporting Citations to File'),
       'operations' => $operations,
+      'init_message' => 'Preparing to Export Citations',
+      'progress_message' => 'Exporting Citations',
       'finished' => 'citation_exporter_batch_finished',
     );
     batch_set($batch);
