@@ -329,20 +329,50 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
   }
 }
 
+function _scholar_get_mods_from_solr_doc($doc, $solr_mods_field) {
+  $mods = '';
+  $pid = $doc->PID;
+          
+  if (isset($doc->{$solr_mods_field})) {
+    $mods = trim($doc->{$solr_mods_field});
+  }
+ 
+  if (empty($mods)) {
+    //Try to get from Fedora...
+    module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+    $item = new Fedora_Item($pid);
+    if ($item->exists() && $item->datastreams['MODS']) {
+      $mods = trim($item->get_datastream_dissemination('MODS'));
+    }
+  }
+  else {
+    //Do nothing; got MODS from Solr.
+  }
+  
+  return $mods;
+}
+
 /**
  * @param $doc              A Solr document object
  * @param $style            A CiteprocJSStyle object, or NULL (to use the default)
  * @param $solr_mods_field  A field in the Solr object, which holds the entire contents of the MODS document (with entities escaped)
+ * @param $format           Flag for which format to return; 'text' or 'php' will return the citation
+ *  as pure markup (using citeproc-php), which 'js' will use citeproc-js
  * @returm The citation, or an empty string.
  */
 function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mods_fullxml_store', $format='js') {
   $pid = $doc->PID;
   $times = array();
-
-  $cache_id = "citation_$pid";
-  $cache_raw = cache_get($cache_id);
   
   if (module_exists('citeproc')) {
+    $cached_raw = NULL;
+    $cache_id = NULL;
+    
+    if(CITEPROC_DO_CACHE) {
+      $cache_id = CITEPROC_CACHE_PREFIX . '_' . $pid;
+      $cached_raw = cache_get($cache_id);
+    }
+  
     if (is_null($style)) {
       module_load_include('inc', 'csl', 'CSL');
       $style = citeproc_style(variable_get('islandora_fjm_recent_additions_csl', CSL::GetDefaultName())); //@todo:  Specify a default CSL, with a different variable name.
@@ -356,24 +386,7 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
           $data_array = $cache_raw->data;
         }
         else {
-          $mods = '';
-          
-          if (isset($doc->{$solr_mods_field})) {
-            $mods = trim($doc->{$solr_mods_field});
-          }
-         
-          if (empty($mods)) {
-            //Try to get from Fedora...
-            module_load_include('inc', 'fedora_repository', 'api/fedora_item');
-            array_push($times, microtime(TRUE));
-            $item = new Fedora_Item($pid);
-            if ($item->exists() && $item->datastreams['MODS']) {
-              $mods = trim($item->get_datastream_dissemination('MODS'));
-            }
-          }
-          else {
-            //Do nothing; got MODS from Solr.
-          }
+          $mods = _scholar_get_mods_from_solr_doc($doc, $solr_mods_field);
 
           if (!empty($mods)) { 
             module_load_include('php', 'citeproc', 'generators/converter');
@@ -404,24 +417,7 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
           $bibliography = citeproc_bibliography_from_raw_array($style, $cache_raw->data);
         }
         else {
-          $mods = '';
-          
-          if (isset($doc->{$solr_mods_field})) {
-            $mods = trim($doc->{$solr_mods_field});
-          }
-         
-          if (empty($mods)) {
-            //Try to get from Fedora...
-            module_load_include('inc', 'fedora_repository', 'api/fedora_item');
-            array_push($times, microtime(TRUE));
-            $item = new Fedora_Item($pid);
-            if ($item->exists() && $item->datastreams['MODS']) {
-              $mods = trim($item->get_datastream_dissemination('MODS'));
-            }
-          }
-          else {
-            //Do nothing; got MODS from Solr.
-          }
+          $mods = _scholar_get_mods_from_solr_doc($doc, $solr_mods_field);
 
           if (!empty($mods)) { 
             $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);

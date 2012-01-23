@@ -72,9 +72,14 @@ class CitationModel extends AbstractModel {
     if (isset($this->item->datastreams['MODS'])) {
       $style = citeproc_style($style_name);
 
-      $cache_id = "citation_{$this->pid}";
-      $cached_raw = cache_get($cache_id);
-
+      $cached_raw = NULL;
+      $cache_id = NULL;
+      
+      if(CITEPROC_DO_CACHE) {
+        $cached_raw = cache_get($cache_id);
+        $cache_id = CITEPROC_CACHE_PREFIX . '_' . $pid;
+      }
+      
       $bibliography = NULL;
       if (!empty($cached_raw)) {
         $bibliography = citeproc_bibliography_from_raw_array($style, $cached_raw->data);
@@ -103,7 +108,10 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
   module_load_include('inc', 'islandora_bibliography', 'CitationForm');
   $pid = $variables['pid'];
   // Open URL Image
-  $variables['open_url_img'] = url(drupal_get_path('module', 'city_of_hope').'/images/openurl.jpg');
+  //XXX:  This should most definitely be moved out into the module preprocess function city_of_hope_preprocess_scholar_overview_panel_citation
+  if (module_exists('city_of_hope')) {
+    $variables['open_url_img'] = url(drupal_get_path('module', 'city_of_hope').'/images/openurl.jpg');
+  }
   //$item = new Fedora_Item($pid);
   $model = new CitationModel($pid);
   $item = & $model->item;

@@ -81,7 +81,7 @@ function template_preprocess_scholar_search_alt_item(array &$vars) {
 
   $vars['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
 
-  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style']);
+  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style'], 'mods_fullxml_store', 'js'); //XXX:  Field needs to be made configurable...
 }
 
 /**
@@ -146,7 +146,8 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
     $pid = $doc->PID;
     $result = '';
     $pids[] = $pid;
-    $result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style); //XXX: Might want to use ITEM_ALT and the solr doc instead?
+    //$result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style); //XXX: Might want to use ITEM_ALT and the solr doc instead?
+    $result = theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
     $table['rows'][] = array(
       '#pid' => $pid,
       'result' => array('#value' => $result),
