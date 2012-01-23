@@ -60,10 +60,9 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     $record_start = $results->response->start;
     $limit_results = variable_get('islandora_solr_search_limit_result_fields', 0);
     module_load_include('inc', 'csl', 'CSL');
-    $styles = array_values(CSL::GetNames()); //Array returned has keys == values, for some reason...  Whatever.
-    $style = citeproc_style($styles[0]);
+    $style = citeproc_default_style();
     foreach ($results->response->docs as $doc) {
-      $output .= theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
+      $output .= theme(THEME_SCHOLAR_SEARCH_ITEM, $doc->PID, $style);
     }
     return $output;
   }
@@ -94,8 +93,15 @@ function template_preprocess_scholar_search_item(array &$variables) {
     $variables['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
     
     $style = $variables['style'];
-    $cache_id = "citation_{$pid}";
-    $cached_raw = cache_get($cache_id);
+    
+    
+    $cached_raw = NULL;
+    $cache_id = NULL;
+    
+    if(module_exists('citeproc') && CITEPROC_DO_CACHE) {
+      $cached_raw = cache_get($cache_id);
+      $cache_id = CITEPROC_CACHE_PREFIX . '_' . $pid;
+    }
     
     $bibliography = NULL;
     if (!empty($cached_raw)) {
@@ -130,15 +136,13 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
   );
 
   module_load_include('inc', 'csl', 'CSL');
-  $styles = CSL::GetNames();
-  $ss = array_keys($styles);
-  $style = citeproc_style($ss[0]); //array_shift($styles));
+  $style = citeproc_default_style();
   $pids = array();
   foreach ($results->response->docs as $doc) {
     $pid = $doc->PID;
     $result = '';
     $pids[] = $pid;
-    $result = theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
+    $result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style); //Might want to use ITEM_ALT and the solr doc instead?
     $table['rows'][] = array(
       '#pid' => $pid,
       'result' => array('#value' => $result),
@@ -164,14 +168,14 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
           '#type' => 'select',
           '#length' => 50,
           '#options' => array(
-            'RIS' => 'RIS',
-            //'RTF' => 'RTF',
+            'RIS' => 'RIS (Endnote format)',
+            //'RTF' => 'RTF (word proccessor format)', //FIXME:  Need a new RTF library which can handle unicode...
             'PDF' => 'PDF',
           )
         ),
         'style' => array(
           '#type' => 'select',
-          '#options' => $styles
+          '#options' => CSL::GetNames()
         ),
         'export all' => array(
           '#type' => 'submit',

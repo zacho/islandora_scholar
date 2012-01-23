@@ -63,8 +63,8 @@ function islandora_bibliography_form(array &$form_state) {
           '#type' => 'select',
           '#length' => 50,
           '#options' => array(
-            'RIS' => 'RIS',
-            //'RTF' => 'RTF',
+            'RIS' => 'RIS (Endnote format)',
+            //'RTF' => 'RTF (word proccessor format)', //FIXME:  Need a new RTF library which supports unicode.
             'PDF' => 'PDF',
           )
         ),

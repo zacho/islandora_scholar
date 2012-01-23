@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file 
  *   this file is used to convert mods data into json for citeproc-js
@@ -30,18 +31,18 @@ function convert_mods_to_citeproc_jsons_escape(&$item, $key) {
 function add_mods_namespace(SimpleXMLElement &$mods) {
   static $used_namespace = NULL;
   static $mods_namespace = 'http://www.loc.gov/mods/v3';
-  
+
   $namespaces = $mods->getNamespaces();
-  
-  if (is_null($used_namespace)) { 
+
+  if (is_null($used_namespace)) {
     if (array_search($mods_namespace, $namespaces) !== FALSE) { //The namespace is there; possibly default, though
-    $used_namespace = $mods_namespace;
+      $used_namespace = $mods_namespace;
     }
     else {
       $used_namespace = '';
     }
   }
-  
+
   if (array_key_exists('mods', $namespaces) === FALSE) {
     $mods->registerXPathNamespace('mods', $used_namespace);
   }
@@ -84,15 +85,13 @@ function convert_mods_to_citeproc_jsons($mods_in) {
   else {
     try {
       $mods = simplexml_load_string($mods_in);
-    }
-    catch (Exception $e) {
+    } catch (Exception $e) {
       watchdog('citeproc', t('Got exception while parsing.  Message: !msg Errors: !error', array(
-        '!msg' => $e->getMessage(),
-        '!error' => libxml_get_errors())));
+            '!msg' => $e->getMessage(),
+            '!error' => libxml_get_errors())));
       return array();
     }
   }
-
   if ($mods instanceof SimpleXMLElement) {
     add_mods_namespace($mods);
     $names = convert_mods_to_citeproc_json_names($mods); // Merge with main object
@@ -136,7 +135,6 @@ function convert_mods_to_citeproc_jsons($mods_in) {
     watchdog('citeproc', 'Not a SimpleXMLElement!');
     return array();
   }
-  
 }
 
 /**
@@ -261,6 +259,13 @@ function convert_mods_to_citeproc_json_page(SimpleXMLElement $mods) {
   return $output;
 }
 
+/**
+ *  Map from an EndNote 'ref-type' to a CSL type.  (Seems to map better than marcgt)
+ *  ('ref-type' were added manually to the MODS as top-level genre with the authority 
+ *  set to 'endnote')
+ *  TODO:  Map all default types
+ *
+ */
 function _get_endnote_type(SimpleXMLElement $mods) {
   $output = '';
   
@@ -269,7 +274,7 @@ function _get_endnote_type(SimpleXMLElement $mods) {
     'Book' => 'book',
     'Edited Book' => 'book',
     'Journal Article' => 'article-journal',
-    'Working Paper' => 'chapter', //FIXME:  Not sure on this one.  'report' might be better?
+    'Working Paper' => 'chapter', //XXX:  This is a custom one for FJM...  Might need a hook?
     'Thesis' => 'thesis'
   );
   $types = $mods->xpath("/mods:mods/mods:genre[@authority='endnote']");
@@ -355,18 +360,19 @@ function convert_mods_to_citeproc_json_type(SimpleXMLElement $mods) {
   module_load_include('inc', 'citeproc', 'generators/mods_csl_type_conversion');
   module_load_include('inc', 'citeproc', 'generators/marcrelator_conversion');
   
+  // First try:  Let's map the a provided Endnote genre...
   $output = _get_endnote_type($mods);
   
-  // First try: item's local marcgt genre.
+  // Second try: item's local marcgt genre.
   if (empty($output)) {
     $output = _get_marcgt_type($mods);
   }
   
-  // Second try: item's parent marcgt genre (often applies to the original item itself).
+  // Third try: item's parent marcgt genre (often applies to the original item itself).
   if (empty($output)) {
     $output = _get_related_marcgt_type($mods);
   }
-  // Third try: other authority types (most likely Zotero local)
+  // Last try: other authority types (most likely Zotero local)
   if (empty($output)) {
     $output = _get_other_types($mods);
   }
@@ -602,6 +608,8 @@ function convert_mods_to_citeproc_json_query(SimpleXMLElement $mods, $path) {
 
 /**
  * This function will convert mods to citeproc_json
+ * @deprecated This function has been broken up
+ * @see convert_mods_to_citeproc_jsons
  * @param $mods
  *   The mods to convert to citeproc_json for citation purposes
  * @param $item_id
@@ -625,7 +633,7 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
   //  try binding to an empty string?  Dunno...  Something like:
   add_mods_namespace($xml);
   //$mods_namespace = $xml->getNamespaces()['mods'];
-  
+
 
   /**
     FROM HERE ON IN, WE'RE DOING XPATH QUERIES AND POPULATING CSL VARIABLES.
@@ -637,13 +645,13 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
   // My answer is to take the *longest*. 
 
   $titles = $xml->xpath("//mods:mods/mods:titleInfo/mods:title");
-  
+
 
   if (!empty($titles))
     while (list($num, $node) = each($titles)) {
       //$node->registerXPathNamespace('mods', $mods_namespace);
       add_mods_namespace($node);
-      
+
       $title = (string) $node;
       $subtitle = $node->xpath("../mods:subTitle");
       if (!empty($subtitle)) {
@@ -827,7 +835,7 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
     if (!strcasecmp($interim_type, 'book')) {
       //$type_marcgt[0]->registerXPathNamespace('mods', $mods_namespace);
       add_mods_namespace($type_marcgt[0]);
-      
+
       $host_titles = $type_marcgt[0]->xpath("../mods:relatedItem[@type='host']/mods:titleInfo/mods:title/text()");
       if (!empty($host_titles)) {
         // This is but a chapter in a book

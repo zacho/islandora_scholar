@@ -18,6 +18,11 @@ define('THEME_SCHOLAR_SEARCH_TABLE', 'scholar_search_results_table');
 define('THEME_SCHOLAR_OVERVIEW_PANEL_CITATION', 'scholar_overview_panel_citation');
 
 /**
+ * Includes
+ */
+module_load_include('inc', 'scholar', 'Batch'); // To Deal with missing function during submit callback, worked at one time.
+
+/**
  * Implements hook_menu().
  */
 function scholar_menu() {
@@ -304,7 +309,7 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
         }
       }
       elseif ($form['content_model_pid']['#value'] === 'ir:authorityCModel') {
-        //Add validation handler so as to only have a single primary name variant.
+        //Add validation handler so as to enforce only having a single primary name variant.
         $val =& $form['#validate'];
         $v = 'scholar_name_tabs_validator';
         if (!in_array($v, $val)) {
@@ -340,8 +345,7 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
   if (module_exists('citeproc')) {
     if (is_null($style)) {
       module_load_include('inc', 'csl', 'CSL');
-      $styles = array_keys(CSL::GetNames()); //Array returned has keys == human readable.
-      $style = citeproc_style(variable_get('islandora_fjm_recent_additions_csl', $styles[0])); //@todo:  Specify a default CSL, with a different variable name.
+      $style = citeproc_style(variable_get('islandora_fjm_recent_additions_csl', CSL::GetDefaultName())); //@todo:  Specify a default CSL, with a different variable name.
     }
     
     switch($format) {
