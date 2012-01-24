@@ -344,6 +344,10 @@ function _scholar_get_mods_from_solr_doc($doc, $solr_mods_field) {
     if ($item->exists() && $item->datastreams['MODS']) {
       $mods = trim($item->get_datastream_dissemination('MODS'));
     }
+    
+    if (empty($mods)) {
+      watchdog('islandora_scholar', 'Failed loading MODS');
+    }
   }
   else {
     //Do nothing; got MODS from Solr.
@@ -374,8 +378,7 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
     }
   
     if (is_null($style)) {
-      module_load_include('inc', 'csl', 'CSL');
-      $style = citeproc_style(variable_get('islandora_fjm_recent_additions_csl', CSL::GetDefaultName())); //@todo:  Specify a default CSL, with a different variable name.
+      $style = citeproc_default_style();
     }
     
     switch($format) {
@@ -391,9 +394,6 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
           if (!empty($mods)) { 
             module_load_include('php', 'citeproc', 'generators/converter');
             $data_array = convert_mods_to_citeproc_jsons($mods);
-          }
-          else {
-            watchdog('islandora_fjm', 'Failed loading MODS');
           }
         }
         
@@ -421,9 +421,6 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
 
           if (!empty($mods)) { 
             $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
-          }
-          else {
-            watchdog('islandora_fjm', 'Failed loading MODS');
           }
         }
         
