@@ -478,7 +478,7 @@ function scholar_required_fedora_objects() {
           'foxml_file' => "$module_path/models/ir:authorityCollectionCModel/FOXML.xml"
         ),
         array(
-          'pid' => 'ir:citationCollection',
+          'pid' => 'ir:authorityCollection',
           'label' => 'Islandora Scholar Author(ity) Collection',
           'foxml_file' => "$module_path/models/ir:authorityCollection/FOXML.xml"
         ),
