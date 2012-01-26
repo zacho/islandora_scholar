@@ -300,9 +300,8 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
         if (!empty($mods)) {
           $doc = new DOMDocument();
           $doc->loadXML($mods);
-          module_load_include('inc', 'csl', 'CSL');
-          $names = array_keys(CSL::GetNames());
-          $style = citeproc_style($names[0]); //XXX:  This'll break if there're none...
+          
+          $style = citeproc_default_style();
           $bibliography = citeproc_bibliography_from_mods($style, $doc);
           $citation = array('#value' => $bibliography->render());
           //TODO: Add submit handler to handle creating RELS-EXT relationships (and PDF file?)
@@ -380,6 +379,12 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
     if (is_null($style)) {
       $style = citeproc_default_style();
     }
+    elseif (is_string($style)) {
+      $style = citeproc_style($style);
+      if ($style === FALSE) {
+        $style = citeproc_default_style();
+      }
+    }
     
     switch($format) {
       case 'text': //Fallthrough
@@ -431,4 +436,53 @@ function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mod
     }
   }
   return '';
+}
+
+function scholar_required_fedora_objects() {
+  $module_path = drupal_get_path('module', 'scholar');
+  
+  //FIXME: Maybe this FOXML stuff should be broken up into individual DSs, so versioning can happen
+  return array(
+    'scholar' => array(
+      'module' => 'scholar',
+      'title' => 'Islandora Scholar',
+      'objects' => array(
+        array(
+          'pid' => 'ir:top',
+          'label' => 'Islandora Scholar Root Collection',
+          'foxml_file' => "$module_path/models/ir:top/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCModel',
+          'label' => 'Islandora Scholar Citation Content Model',
+          'foxml_file' => "$module_path/models/ir:citationCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCollectionCModel',
+          'label' => 'Islandora Scholar Citation Collection Content Model',
+          'foxml_file' => "$module_path/models/ir:citationCollectionCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCollection',
+          'label' => 'Islandora Scholar Citation Collection',
+          'foxml_file' => "$module_path/models/ir:citationCollection/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:authorityCModel',
+          'label' => 'Islandora Scholar Author(ity) Content Model',
+          'foxml_file' => "$module_path/models/ir:authorityCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:authorityCollectionCModel',
+          'label' => 'Islandora Scholar Author(ity) Collection Content Model',
+          'foxml_file' => "$module_path/models/ir:authorityCollectionCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCollection',
+          'label' => 'Islandora Scholar Author(ity) Collection',
+          'foxml_file' => "$module_path/models/ir:authorityCollection/FOXML.xml"
+        ),
+      ),
+    ),
+  );
 }
