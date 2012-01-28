@@ -18,3 +18,9 @@
 .csl-entry {
   margin: 1em;
 }
+
+.csl-entry > div.csl-indent {
+  display: block;
+  padding-top: 1em;
+  padding-left: 1em;
+}
