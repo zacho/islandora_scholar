@@ -11,7 +11,7 @@
     <?php print print_r($citation[0], TRUE); ?>
     <?php print drupal_get_form('islandora_bibliography_citation_form', $pid); ?>
   </div>
-  <?php if (isset($accessnum)): ?>
+  <?php if (!empty($accessnum)): ?>
     <a id="open-url-link" class="overview-field" href="http://linksource.ebsco.com/linking.aspx?ID=12411?sid=Entrez:PubMed&amp;id=pmid:<?php print $accessnum; ?>" target="_blank"><img alt="Click here to read" id="linkout-icon-unknown-DB__1__13__4178" border="0" src="<?php print $open_url_img; ?>"></a>
   <?php endif; ?>
   <?php if (!empty($abstract)): ?>
