@@ -23,6 +23,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     module_load_include('inc', 'scholar', 'SearchForm');
     drupal_set_title(t('Search Publications'));
     drupal_add_css(drupal_get_path('module', 'scholar') . '/css/Search.css');
+    
     if (!empty($_SESSION['scholar']['search']['sort'])) {
       $sort = $_SESSION['scholar']['search']['sort'];
       $order = $_SESSION['scholar']['search']['order'];
@@ -30,6 +31,14 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
       $query_processor->solrParams['sort'] = $sort . ' ' . $order;
       $query_processor->executeQuery();
     }
+    elseif ($query_processor->solrQuery === '*:*') {
+      $sort = 'mods_title_mlt';
+      $order = 'asc';
+      $query_processor->solrParams['fl'] = '*,score';
+      $query_processor->solrParams['sort'] = $sort . ' ' . $order;
+      $query_processor->executeQuery();
+    }
+    //unset($_SESSION['scholar']['search']);
     $total = (int) $query_processor->solrResult->response->numFound;
     $output .= drupal_get_form('scholar_search_form');
     if ($total === 0) {
@@ -67,7 +76,6 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     }
     return $output;
   }
-
 }
 
 function template_preprocess_scholar_search_alt_item(array &$vars) {
@@ -256,9 +264,11 @@ function _scholar_search_get_all_pids_from_query(array &$form_state) {
   $query_processor = $form_state['storage']['query'];
   $previous_limit = $query_processor->solrLimit;
   $query_processor->solrLimit = 100000;
-  $query_processor->solrParams['fl'] = 'PID';
+  $fl =& $query_processor->solrParams['fl'];
+  $old_fl = $fl;
+  $fl = 'PID';
   $query_processor->executeQuery();
-  unset($query_processor->solrParams['fl']);
+  $fl = $old_fl;
   $query_processor->solrLimit = $previous_limit;
   $results = $query_processor->solrResult;
   $pids = array();

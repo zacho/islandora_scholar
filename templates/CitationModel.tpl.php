@@ -70,7 +70,7 @@
   <?php endif; ?>
   <?php if (!empty($url)):?>
     <div id="urls" class="overview-field">
-      <h3><?php print t('URLs:') ?></h3>
+      <h3><?php print t('Publisher URL:') ?></h3>
       <ul>
       <?php foreach (explode('<br/>', $url) as $a_url):?>
         <li class="overview-field-content"><?php print l($a_url, $a_url); ?></li>
