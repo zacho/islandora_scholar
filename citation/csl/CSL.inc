@@ -30,7 +30,39 @@ class CSL {
       $style = new DOMDocument();
       $style->loadXML($style_in);
     }
-    return $style->relaxNGValidate($schema_filename);
+    /**
+     * We don't want to show any of this errors to the end users, but we do want to log them.
+     */
+    libxml_use_internal_errors(TRUE); // Prevent Drupal from catching errors.  
+    if (!($valid = $style->relaxNGValidate($schema_filename))) {
+      self::loglibxmlErrors();
+    }
+    libxml_use_internal_errors(TRUE); // Allow Drupal to catching errors.  
+    return $valid;
+  }
+
+  /**
+   * Log any xml errors to the watchdog.
+   */
+  private static function loglibxmlErrors() {
+    $errors = libxml_get_errors();
+    foreach ($errors as $error) {
+      $levels = array(
+        LIBXML_ERR_WARNING => WATCHDOG_WARNING,
+        LIBXML_ERR_ERROR => WATCHDOG_ERROR,
+        LIBXML_ERR_FATAL => WATCHDOG_ERROR
+      );
+      $severity = $levels[$error->level];
+      $message = t('code: %code message: %message file: %file line: %line column: %column', array(
+        '%code' => $error->code,
+        '%message' => $error->message,
+        '%file' => $error->file,
+        '%line' => $error->line,
+        '%column' => $error->column)
+      );
+      watchdog('CSL', $message, NULL, $severity);
+    }
+    libxml_clear_errors();
   }
 
   /**
