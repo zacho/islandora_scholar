@@ -148,7 +148,7 @@ class CSL {
   public static function Create($style_name, $definition) {
     if (!self::Exists($style_name)) {
       if (!self::Valid($definition)) {
-        drupal_set_message("The $style_name is not valid CSL 1.0 problems may occur.");
+        drupal_set_message("The $style_name is not valid CSL 1.0 problems may occur.", 'warning');
       }
       $object = new stdClass();
       $object->name = $style_name;
