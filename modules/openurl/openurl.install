@@ -13,9 +13,7 @@ module_load_include('inc', 'openurl', 'openurl.db');
 function openurl_install() {
   drupal_install_schema('openurl');
   _openurl_add_foreign_key_constraints();
-  // Create Files location
-  $path = file_directory_path() . '/openurl';
-  file_check_directory($path, FILE_CREATE_DIRECTORY);
+  _openurl_create_files_directory();
 }
 
 /**
@@ -23,15 +21,7 @@ function openurl_install() {
  */
 function openurl_uninstall() {
   drupal_uninstall_schema('openurl');
-  // Remove files.
-  $path = file_directory_path() . '/openurl';
-  if (file_check_directory($path)) {
-    $files = file_scan_directory($path, '.*');
-    foreach ($files as $file) {
-      unlink($file->filename);
-    }
-    rmdir($path);
-  }
+  _openurl_delete_files_directory();
 }
 
 /**
@@ -123,4 +113,26 @@ function _openurl_add_foreign_key_constraints() {
   ON UPDATE NO ACTION
 EOT;
   db_query($query);
+}
+
+/**
+ * Adds directory for storing uploaded icon files.
+ */
+function _openurl_create_files_directory() {
+  $path = file_directory_path() . '/openurl';
+  file_check_directory($path, FILE_CREATE_DIRECTORY);
+}
+
+/**
+ * Removes the directory for storing uploaded icon files.
+ */
+function _openurl_delete_files_directory() {
+  $path = file_directory_path() . '/openurl';
+  if (file_check_directory($path)) {
+    $files = file_scan_directory($path, '.*');
+    foreach ($files as $file) {
+      unlink($file->filename);
+    }
+    rmdir($path);
+  }
 }
