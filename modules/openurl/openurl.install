@@ -23,13 +23,14 @@ function openurl_install() {
  */
 function openurl_uninstall() {
   drupal_uninstall_schema('openurl');
-  // Remove Files location
+  // Remove files.
   $path = file_directory_path() . '/openurl';
   if (file_check_directory($path)) {
-    foreach (glob($path . '/*.*') as $file) {
-      @unlink($file);
+    $files = file_scan_directory($path, '.*');
+    foreach ($files as $file) {
+      unlink($file->filename);
     }
-    @rmdir($path);
+    rmdir($path);
   }
 }
 
@@ -51,13 +52,13 @@ function openurl_schema() {
         'type' => 'int',
         'not null' => TRUE
       ),
-      'key' => array(
+      'param_key' => array(
         'description' => t('Parameter Key.'),
         'type' => 'varchar',
         'length' => 256,
         'not null' => TRUE,
       ),
-      'value' => array(
+      'param_value' => array(
         'description' => t('Parameter Value.'),
         'type' => 'text',
         'size' => 'normal',

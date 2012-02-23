@@ -68,33 +68,34 @@ function openurl_settings_form(array &$form_state) {
         ))
     );
   }
+  $add = array(
+    '#type' => 'submit',
+    '#value' => 'Add',
+    '#submit' => array('openurl_add_setting'),
+    '#validate' => array('openurl_add_setting_validate'),
+  );
   $settings['add'] = array(
     'add_name' => array(
       '#type' => 'textfield',
       '#title' => 'Name',
       '#description' => t('Must be unique'),
       '#size' => 32,
-      '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : NULL,
+      '#default_value' => isset($form_state['values']['add_name']) ? $form_state['values']['add_name'] : NULL,
     ),
     'add_url' => array(
       '#type' => 'textfield',
       '#title' => 'Base URL',
       '#description' => t('Link Resolver Address'),
       '#size' => 32,
-      '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : NULL,
+      '#default_value' => isset($form_state['values']['add_url']) ? $form_state['values']['add_url'] : NULL,
     ),
     'file' => array(
       '#type' => 'file',
       '#title' => 'Icon',
       '#description' => t('Icon for the link.'),
-      '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : NULL,
+      '#default_value' => isset($form_state['values']['file']) ? $form_state['values']['file'] : NULL,
     ),
-    'submit' => array(
-      '#type' => 'submit',
-      '#value' => 'Add',
-      '#submit' => array('openurl_add_setting'),
-      '#validate' => array('openurl_add_setting_validate'),
-    ),
+    'submit' => $add,
     0 => array(
       '#value' => '' // Filler so the table is formated correctly.
     ),
@@ -103,34 +104,18 @@ function openurl_settings_form(array &$form_state) {
     ),
   );
   $form = array(
+    '#attributes' => array('enctype' => 'multipart/form-data'),
     'fieldset' => array(
       '#title' => t('Settings'),
       '#type' => 'fieldset',
+      /**
+       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and 
+       * placed it at the begining of the form. Making it hidden, so it will be the default action.
+       */
+      'add' => array_merge($add, array('#attributes' => array('style' => 'position: absolute; left: -9999px; width: 1px; height: 1px;'))),
       'settings' => $settings
     ),
-    /**
-     * Default action is to add a setting
-     */
-    '#attributes' => array('enctype' => 'multipart/form-data'),
-    '#submit' => array('openurl_add_setting'),
-    '#validate' => array('openurl_add_setting_validate'),
   );
-  return $form;
-}
-
-/**
- * 
- * 
- * @param array $form_state
- *   Drupal form state.
- * @param string $name
- *   The name of the settings to edit.
- *
- * @return array
- *   Drupal form definition.
- */
-function openurl_default_parameters_form(array &$form_state, $name) {
-  $form = array();
   return $form;
 }
 
@@ -150,12 +135,8 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
   if (openurl_db_has_setting($name)) {
     form_set_error('add_name', t('Settings for "%name" already exists.', array('%name' => $name)));
   }
-  /**
-   * @todo fix fileuploads.
-   */
-  $form_state['values']['file'] = file_save_upload('file', array(
-    'file_validate_is_image' => array(),
-      ), file_directory_path() . '/openurl', FILE_EXISTS_REPLACE);
+  $validators = array('file_validate_is_image' => array());
+  $form_state['values']['file'] = file_save_upload('file', $validators, FILES_OPENURL, FILE_EXISTS_REPLACE);
 }
 
 /**
@@ -168,12 +149,17 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
  */
 function openurl_add_setting(array $form, array &$form_state) {
   $values = $form_state['values'];
-  $filename = $values['file']->filename;
-  $added = openurl_db_add_setting($values['add_name'], $values['add_url'], $filename);
-  $message = $added ? 'Successfully added settings for "%name"' : 'Failed to add settings for "%name"';
+  $filename = isset($values['file']->filename) ? $values['file']->filename : NULL;
+  if (openurl_db_add_setting($values['add_name'], $values['add_url'], $filename)) {
+    $message = 'Successfully added settings for "%name"';
+    $type = 'status';
+  }
+  else {
+    $message = 'Failed to add settings for "%name"';
+    $type = 'error';
+  }
   $message_args = array('%name' => $values['add_name']);
-  // check for file.
-  drupal_set_message(t($message, $message_args));
+  drupal_set_message(t($message, $message_args), $type);
 }
 
 /**
@@ -237,6 +223,127 @@ function openurl_set_default(array $form, array &$form_state) {
 }
 
 /**
+ * 
+ * 
+ * @param array $form_state
+ *   Drupal form state.
+ * @param string $name
+ *   The name of the settings to edit.
+ *
+ * @return array
+ *   Drupal form definition.
+ */
+function openurl_default_param_form(array &$form_state, $name) {
+  $form = array();
+  if (openurl_db_has_setting($name)) {
+    $default_parameters = array(
+      '#header' => array('Key', 'Value'),
+      '#theme' => THEME_OPENURL_FORM_TABLE,
+    );
+    $results = openurl_db_get_default_parameters($name);
+    while ($row = db_fetch_object($results)) {
+      $default_parameters[] = array(
+        '#tree' => TRUE,
+        'key' => array('#value' => $row->param_key),
+        'value' => array('#value' => $row->param_value),
+        'delete' => array(
+          '#type' => 'submit',
+          '#value' => 'Delete',
+          '#parameter_id' => $row->id,
+          '#key' => $row->param_key,
+          '#name' => 'delete-' . $row->id,
+          '#submit' => array('openurl_delete_default_parameter'),
+        )
+      );
+    }
+  }
+  $add = array(
+    '#type' => 'submit',
+    '#value' => 'Add',
+    '#submit' => array('openurl_add_default_param'),
+  );
+  $default_parameters['add'] = array(
+    'add_key' => array(
+      '#type' => 'textfield',
+      '#title' => 'Key',
+      '#size' => 32,
+      '#default_value' => isset($form_state['values']['add_key']) ? $form_state['values']['add_key'] : NULL,
+    ),
+    'add_value' => array(
+      '#type' => 'textfield',
+      '#title' => 'Value',
+      '#size' => 32,
+      '#default_value' => isset($form_state['values']['add_value']) ? $form_state['values']['add_value'] : NULL,
+    ),
+    'submit' => $add
+  );
+  $form = array(
+    '#attributes' => array('enctype' => 'multipart/form-data'),
+    'setting' => array(
+      '#type' => 'hidden',
+      '#value' => $name,
+    ),
+    'fieldset' => array(
+      '#title' => t('Default Parameters for %name', array('%name' => $name)),
+      '#type' => 'fieldset',
+      /**
+       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and 
+       * placed it at the begining of the form. Making it hidden, so it will be the default action.
+       */
+      'add' => array_merge($add, array('#attributes' => array('style' => 'position: absolute; left: -9999px; width: 1px; height: 1px;'))),
+      'settings' => $default_parameters
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Adds a default key value pair for the given setting.
+ *
+ * @param array $form_state
+ *   Drupal form state.
+ * @param string $name
+ *   The name of the settings to edit.
+ */
+function openurl_add_default_param(array $form, array &$form_state) {
+  $values = $form_state['values'];
+  if (openurl_db_add_default_param($values['setting'], $values['add_key'], $values['add_value'])) {
+    $message = 'Successfully added default parameter "%key" for %name';
+    $type = 'status';
+  }
+  else {
+    $message = 'Failed to add default parameter "%key" for "%name"';
+    $type = 'error';
+  }
+  $message_args = array('%key' => $values['add_key'], '%name' => $values['setting']);
+  drupal_set_message(t($message, $message_args), $type);
+}
+
+/**
+ * Deletes the given default parameter.s
+ * 
+ * @param array $form_state
+ *   Drupal form state.
+ * @param string $name
+ *   The name of the settings to edit.
+ */
+function openurl_delete_default_parameter(array $form, array &$form_state) {
+  $id = $form_state['clicked_button']['#parameter_id'];
+  $key = $form_state['clicked_button']['#key'];
+  $setting = $form_state['values']['setting'];
+  if (openurl_db_delete_default_param($id)) {
+    $message = 'Successfully removed the default parameter "%key" for "%name"';
+    $type = 'status';
+  }
+  else {
+    $message = 'Failed to removed the default parameter "%key" for "%name"';
+    $type = 'error';
+  }
+  $message_args = array('%key' => $key, '%name' => $setting);
+  drupal_set_message(t($message, $message_args), $type);
+}
+
+/**
  * Theme's a form table for this module.
  * 
  * @param array $element
@@ -279,7 +386,7 @@ function theme_openurl_form_default_parameters($name) {
   }
   else {
     $output = drupal_get_form('openurl_settings_form');
-    $output .= drupal_get_form('openurl_default_parameters_form', $name);
+    $output .= drupal_get_form('openurl_default_param_form', $name);
     return $output;
   }
 }
