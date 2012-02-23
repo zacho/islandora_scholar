@@ -114,7 +114,7 @@ function openurl_settings_form(array &$form_state) {
     '#attributes' => array('enctype' => 'multipart/form-data'),
     '#submit' => array('openurl_add_setting'),
     '#validate' => array('openurl_add_setting_validate'),
-  );  
+  );
   return $form;
 }
 
@@ -155,7 +155,7 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
    */
   $form_state['values']['file'] = file_save_upload('file', array(
     'file_validate_is_image' => array(),
-  ), file_directory_path() . '/openurl', FILE_EXISTS_REPLACE);
+      ), file_directory_path() . '/openurl', FILE_EXISTS_REPLACE);
 }
 
 /**
@@ -180,11 +180,36 @@ function openurl_add_setting(array $form, array &$form_state) {
  * Redirects the user to the edit page for a given element.
  * 
  * @param array $form
+ *   The Drupal form.
  * @param array $form_state 
+ *   The Drupal form state.
  */
 function openurl_edit_setting_redirect(array $form, array &$form_state) {
   $name = $form_state['clicked_button']['#setting_name'];
   drupal_goto(str_replace('%', $name, MENU_OPENURL_DEFAULT_PARAMETERS));
+}
+
+/**
+ * Deletes the given settings and redirects the user to the main settings page for OpenURL.
+ * 
+ * @param array $form
+ *   The Drupal form.
+ * @param array $form_state 
+ *   The Drupal form state.
+ */
+function openurl_delete_setting(array $form, array &$form_state) {
+  $name = $form_state['clicked_button']['#setting_name'];
+  if (openurl_db_delete_setting($name)) {
+    $message = 'Successfully removed the settings for "%name"';
+    $type = 'status';
+  }
+  else {
+    $message = 'Failed to remove the settings for "%name"';
+    $type = 'error';
+  }
+  $message_args = array('%name' => $name);
+  drupal_set_message(t($message, $message_args), $type);
+  drupal_goto(MENU_OPENURL_SETTINGS);
 }
 
 /**

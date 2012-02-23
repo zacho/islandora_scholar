@@ -53,4 +53,22 @@ function openurl_db_add_setting($name, $url, $icon = NULL) {
     $setting->icon = $icon;
     return drupal_write_record(TABLE_OPENURL_SETTINGS, $setting) !== FALSE;
   }
+  return FALSE;
+}
+
+/**
+ * Delets the given named setting if it exists.
+ * 
+ * @param string $name
+ *   The settings name to look for.
+ * 
+ * @return boolean
+ *   TRUE if successful FALSE otherwise.
+ */
+function openurl_db_delete_setting($name) {
+  if (openurl_db_has_setting($name)) {
+    $result = db_query('DELETE FROM {%s} WHERE name = "%s"', TABLE_OPENURL_SETTINGS, $name);
+    return $result !== FALSE;
+  }
+  return FALSE;
 }
