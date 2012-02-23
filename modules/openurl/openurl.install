@@ -13,6 +13,9 @@ module_load_include('inc', 'openurl', 'openurl.db');
 function openurl_install() {
   drupal_install_schema('openurl');
   _openurl_add_foreign_key_constraints();
+  // Create Files location
+  $path = file_directory_path() . '/openurl';
+  file_check_directory($path, FILE_CREATE_DIRECTORY);
 }
 
 /**
@@ -20,12 +23,52 @@ function openurl_install() {
  */
 function openurl_uninstall() {
   drupal_uninstall_schema('openurl');
+  // Remove Files location
+  $path = file_directory_path() . '/openurl';
+  if (file_check_directory($path)) {
+    foreach (glob($path . '/*.*') as $file) {
+      @unlink($file);
+    }
+    @rmdir($path);
+  }
 }
 
 /**
  * Implementation of hook_schema().
  */
 function openurl_schema() {
+  /**
+   * Default Parameters used in constructing the OpenURL.
+   */
+  $schema[TABLE_OPENURL_DEFAULT_PARAMETERS] = array(
+    'description' => t('Default parameters to use with a given OpenURL'),
+    'fields' => array(
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'setting_id' => array(
+        'type' => 'int',
+        'not null' => TRUE
+      ),
+      'key' => array(
+        'description' => t('Parameter Key.'),
+        'type' => 'varchar',
+        'length' => 256,
+        'not null' => TRUE,
+      ),
+      'value' => array(
+        'description' => t('Parameter Value.'),
+        'type' => 'text',
+        'size' => 'normal',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'setting_id' => array('setting_id'),
+    )
+  );
   /**
    * Storage location for OpenURL settings.
    */
@@ -58,38 +101,6 @@ function openurl_schema() {
     'unique keys' => array(
       'name' => array('name')
     ),
-  );
-  /**
-   * Default Parameters used in constructing the OpenURL.
-   */
-  $schema[TABLE_OPENURL_DEFAULT_PARAMETERS] = array(
-    'description' => t('Default parameters to use with a given OpenURL'),
-    'fields' => array(
-      'id' => array(
-        'type' => 'serial',
-        'not null' => TRUE,
-      ),
-      'setting_id' => array(
-        'type' => 'int',
-        'not null' => TRUE
-      ),
-      'key' => array(
-        'description' => t('Parameter Key.'),
-        'type' => 'varchar',
-        'length' => 256,
-        'not null' => TRUE,
-      ),
-      'value' => array(
-        'description' => t('Parameter Value.'),
-        'type' => 'text',
-        'size' => 'normal',
-        'not null' => TRUE,
-      ),
-    ),
-    'primary key' => array('id'),
-    'indexes' => array(
-      'setting_id' => array('setting_id'),
-    )
   );
   return $schema;
 }

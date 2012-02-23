@@ -83,7 +83,7 @@ function openurl_settings_form(array &$form_state) {
       '#size' => 32,
       '#default_value' => isset($form_state['values']['name']) ? $form_state['values']['name'] : NULL,
     ),
-    'add_icon' => array(
+    'file' => array(
       '#type' => 'file',
       '#title' => 'Icon',
       '#description' => t('Icon for the link.'),
@@ -111,9 +111,10 @@ function openurl_settings_form(array &$form_state) {
     /**
      * Default action is to add a setting
      */
+    '#attributes' => array('enctype' => 'multipart/form-data'),
     '#submit' => array('openurl_add_setting'),
     '#validate' => array('openurl_add_setting_validate'),
-  );
+  );  
   return $form;
 }
 
@@ -149,6 +150,12 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
   if (openurl_db_has_setting($name)) {
     form_set_error('add_name', t('Settings for "%name" already exists.', array('%name' => $name)));
   }
+  /**
+   * @todo fix fileuploads.
+   */
+  $form_state['values']['file'] = file_save_upload('file', array(
+    'file_validate_is_image' => array(),
+  ), file_directory_path() . '/openurl', FILE_EXISTS_REPLACE);
 }
 
 /**
@@ -161,9 +168,11 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
  */
 function openurl_add_setting(array $form, array &$form_state) {
   $values = $form_state['values'];
-  $added = openurl_db_add_setting($values['add_name'], $values['add_url'], $values['add_icon']);
+  $filename = $values['file']->filename;
+  $added = openurl_db_add_setting($values['add_name'], $values['add_url'], $filename);
   $message = $added ? 'Successfully added settings for "%name"' : 'Failed to add settings for "%name"';
   $message_args = array('%name' => $values['add_name']);
+  // check for file.
   drupal_set_message(t($message, $message_args));
 }
 
