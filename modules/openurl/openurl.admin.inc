@@ -109,7 +109,7 @@ function openurl_settings_form(array &$form_state) {
       '#title' => t('Settings'),
       '#type' => 'fieldset',
       /**
-       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and 
+       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and
        * placed it at the begining of the form. Making it hidden, so it will be the default action.
        */
       'add' => array_merge($add, array('#attributes' => array('style' => 'position: absolute; left: -9999px; width: 1px; height: 1px;'))),
@@ -121,10 +121,10 @@ function openurl_settings_form(array &$form_state) {
 
 /**
  * Validates the input for adding a new setting.
- * 
+ *
  * @param array $form
  *   The Drupal form.
- * @param array $form_state 
+ * @param array $form_state
  *   The Drupal form state.
  */
 function openurl_add_setting_validate(array $form, array &$form_state) {
@@ -141,10 +141,10 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
 
 /**
  * Adds a new setting for OpenURL.
- * 
+ *
  * @param array $form
  *   The Drupal form.
- * @param array $form_state 
+ * @param array $form_state
  *   The Drupal form state.
  */
 function openurl_add_setting(array $form, array &$form_state) {
@@ -164,10 +164,10 @@ function openurl_add_setting(array $form, array &$form_state) {
 
 /**
  * Redirects the user to the edit page for a given element.
- * 
+ *
  * @param array $form
  *   The Drupal form.
- * @param array $form_state 
+ * @param array $form_state
  *   The Drupal form state.
  */
 function openurl_edit_setting_redirect(array $form, array &$form_state) {
@@ -177,10 +177,10 @@ function openurl_edit_setting_redirect(array $form, array &$form_state) {
 
 /**
  * Deletes the given settings and redirects the user to the main settings page for OpenURL.
- * 
+ *
  * @param array $form
  *   The Drupal form.
- * @param array $form_state 
+ * @param array $form_state
  *   The Drupal form state.
  */
 function openurl_delete_setting(array $form, array &$form_state) {
@@ -200,10 +200,10 @@ function openurl_delete_setting(array $form, array &$form_state) {
 
 /**
  * Sets the default OpenURL to use when none is specified.
- * 
+ *
  * @param array $form
  *   The Drupal form.
- * @param array $form_state 
+ * @param array $form_state
  *   The Drupal form state.
  */
 function openurl_set_default(array $form, array &$form_state) {
@@ -223,8 +223,8 @@ function openurl_set_default(array $form, array &$form_state) {
 }
 
 /**
- * 
- * 
+ * Display the form for adding parameters.
+ *
  * @param array $form_state
  *   Drupal form state.
  * @param string $name
@@ -240,7 +240,7 @@ function openurl_default_param_form(array &$form_state, $name) {
       '#header' => array('Key', 'Value'),
       '#theme' => THEME_OPENURL_FORM_TABLE,
     );
-    $results = openurl_db_get_default_parameters($name);
+    $results = openurl_db_get_default_params($name);
     while ($row = db_fetch_object($results)) {
       $default_parameters[] = array(
         '#tree' => TRUE,
@@ -287,7 +287,7 @@ function openurl_default_param_form(array &$form_state, $name) {
       '#title' => t('Default Parameters for %name', array('%name' => $name)),
       '#type' => 'fieldset',
       /**
-       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and 
+       * A bit of a hack, I want the default action here to be add not delete, so I've mirrored the add button and
        * placed it at the begining of the form. Making it hidden, so it will be the default action.
        */
       'add' => array_merge($add, array('#attributes' => array('style' => 'position: absolute; left: -9999px; width: 1px; height: 1px;'))),
@@ -321,7 +321,7 @@ function openurl_add_default_param(array $form, array &$form_state) {
 
 /**
  * Deletes the given default parameter.s
- * 
+ *
  * @param array $form_state
  *   Drupal form state.
  * @param string $name
@@ -345,10 +345,10 @@ function openurl_delete_default_parameter(array $form, array &$form_state) {
 
 /**
  * Theme's a form table for this module.
- * 
+ *
  * @param array $element
  *   A Drupal Form Element.
- * 
+ *
  * @return sting
  *   HTML that renders a table of settings for datastreams.
  */
@@ -372,11 +372,11 @@ function theme_openurl_form_table(array $element) {
 
 /**
  * Renders both admin forms, used for editing existing OpenURL settings.
- * 
+ *
  * @param string $name
  *   The name of the OpenURL settings.
- * 
- * @return string 
+ *
+ * @return string
  *   Returns the html for both admin forms.
  */
 function theme_openurl_form_default_parameters($name) {

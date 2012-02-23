@@ -7,26 +7,60 @@
  */
 
 /**
- * Given a base url and some parementers this function generates a OpenURL link.
+ * Given a named OpenURL link, created on the settings page for this module. 
+ * Generate a OpenURL combinding the given parameters with the stored default parameters.
  *
- * @param string $url
- *   The base resolver portion of a OpenURL
+ * @param string $name
+ *   The name of the OpenURL as defined in the settings page for this module.
  * @param array $params
+ *   The set of key values parameters to use with OpenURL.
  *
  * @return string
- *   A OpenURL link.
+ *   A OpenURL link if successful FALSE otherwise.
  */
-function openurl_link($url, array $params) {
-  /**
-   * @todo Implement based on documentation.
-   */
-  return '';
+function openurl_link($name, array $params = array()) {
+  if (($result = openurl_db_get_setting($name)) != FALSE) {
+    $setting = db_fetch_object($result);
+    $default_params = openurl_default_params($name);
+    $params = array_merge($default_params, $params);
+    return openurl_url($setting->url, $params);
+  }
+  return FALSE;
+}
+
+/**
+ * Gets the default parameters to be used with the given OpenURL
+ * 
+ * @param string $name
+ *   The name of the OpenURL as defined in the settings page for this module.
+ * 
+ * @return array 
+ *   The default key value pairs to be used with the given OpenURL.
+ */
+function openurl_get_default_params($name) {
+  $params = array();
+  while ($param = db_fetch_object(openurl_db_get_default_parameters($name))) {
+    $params[] = array($param->param_key, $param->param_value);
+  }
+  return $params;
+}
+
+/**
+ * Creates an OpenURL from the given base resolver URL and key value parameters.
+ * 
+ * @param string $url
+ *   The base url for the link resolver.
+ * @param array $params 
+ *   The params to use in constructing the openurl url.
+ */
+function openurl_url($url, array $params) {
+  return $url . '?' . http_build_query($params);
 }
 
 /**
  * Theme's a OpenURL link.
  *
- * @param string $url
+ * @param string $name
  *   A OpenURL link,
  * @param string $icon
  *   A path to an option icon to display as the OpenURL link.
@@ -34,6 +68,14 @@ function openurl_link($url, array $params) {
  * @return string
  *   The html link.
  */
-function theme_openurl_link($url, $icon = NULL) {
-  return '<a href="/" title="Change Me!">Change Mes</a>';
+function theme_openurl_link($name, array $params = array(), $title = '', $text='') {
+  $url = openurl_link($name, $params);
+  $settings = db_fetch_object(openurl_db_get_setting($name));
+  $icon = FILES_OPENURL . '/' . $settings->icon;
+  if (file_check_location($icon)) {
+    return "<a href='{$url}' title='{$title}'><img src='{$icon}' alt='{$title}'></a>";
+  }
+  else {
+    return "<a href='{$url}' title='{$title}'>$text</a>";
+  }
 }

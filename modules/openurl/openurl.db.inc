@@ -23,7 +23,7 @@ function openurl_db_get_settings() {
  *
  * @param string $name
  *   The settings name to retrieve.
- * 
+ *
  * @return stdClass
  *   A database query result resource, as returned from db_query().
  */
@@ -33,10 +33,10 @@ function openurl_db_get_setting($name) {
 
 /**
  * Checks to see if the named setting exists.
- * 
+ *
  * @param string $name
  *   The settings name to look for.
- * 
+ *
  * @return boolean
  *   TRUE if successful FALSE otherwise.
  */
@@ -47,14 +47,14 @@ function openurl_db_has_setting($name) {
 
 /**
  * Adds a new setting to the database.
- * 
+ *
  * @param string $name
  *   The unique name for this setting.
  * @param string $url
  *   The base url for the link resolver.
  * @param string $icon
  *   The name of the icon to be used for this link.
- * 
+ *
  * @return boolean
  *   TRUE if successful FALSE otherwise.
  */
@@ -71,10 +71,10 @@ function openurl_db_add_setting($name, $url, $icon = NULL) {
 
 /**
  * Delets the given named setting if it exists.
- * 
+ *
  * @param string $name
  *   The settings name to look for.
- * 
+ *
  * @return boolean
  *   TRUE if successful FALSE otherwise.
  */
@@ -88,14 +88,14 @@ function openurl_db_delete_setting($name) {
 
 /**
  * Gets the default parameters for the given setting.
- * 
+ *
  * @param string $name
  *   The settings name to look for.
- * 
+ *
  * @return stdClass
  *   A database query result resource, as returned from db_query().
  */
-function openurl_db_get_default_parameters($name) {
+function openurl_db_get_default_params($name) {
   if (($result = openurl_db_get_setting($name)) != FALSE) {
     $setting = db_fetch_object($result);
     return db_query('SELECT * FROM {%s} WHERE setting_id = "%d"', TABLE_OPENURL_DEFAULT_PARAMETERS, $setting->id);
@@ -105,14 +105,14 @@ function openurl_db_get_default_parameters($name) {
 
 /**
  * Adds a default parameter to the given setting.
- * 
+ *
  * @param string $name
  *   The settings name to look for.
  * @param string $key
  *   Parameter key.
  * @param string $value
  *   Parameter value.
- * 
+ *
  * @return boolean
  *   TRUE if successful FALSE otherwise.
  */
@@ -130,9 +130,9 @@ function openurl_db_add_default_param($name, $key, $value) {
 
 /**
  * Removes the given default parameter.
- * 
+ *
  * @param int $id
- * 
+ *
  * @return boolean
  *   TRUE if successful FALSE otherwise.
  */
