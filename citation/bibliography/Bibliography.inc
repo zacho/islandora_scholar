@@ -55,9 +55,15 @@ class Bibliography {
     module_load_include('inc', 'fedora_repository', 'api/fedora_item');
     $item = new Fedora_Item($pid);
     if ($item->exists()) {
-      module_load_include('inc', 'fedora_repository', 'ContentModel');
-      $content_model = ContentModel::loadFromObject($pid);
-      return $content_model->pid == 'ir:citationCModel';
+      module_load_include('inc', 'fedora_repository', 'ObjectHelper');
+      $objectHelper = new ObjectHelper();
+      $content_models = $objectHelper->get_content_models_list($pid);
+      foreach ($content_models as $content_model) {
+        if ($content_model->pid == 'ir:citationCModel') {
+          return TRUE;
+        }
+      }
+      return FALSE;
     }
     return FALSE;
   }

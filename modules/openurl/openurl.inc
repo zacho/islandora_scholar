@@ -75,9 +75,10 @@ function theme_openurl_link($name, array $params = array(), $title = 'link', $te
   $settings = db_fetch_object(openurl_db_get_setting($name));
   $icon = FILES_OPENURL . '/' . $settings->icon;
   if (isset($settings->icon) && file_check_location($icon)) {
-    return "<a href='{$url}' title='{$title}'><img src='{$icon}' alt='{$title}'></a>";
+    $icon = url($icon);
+    return "<a href='{$url}' title='{$title}' onClick=\"window.open('{$url}', 'OpenURL','height=600,width=800,modal=yes,alwaysRaised=yes'); event.returnValue = false; return false;\"><img src='{$icon}' alt='{$title}'></a>";
   }
   else {
-    return "<a href='{$url}' title='{$title}'>$text</a>";
+    return "<a href='{$url}' title='{$title}' onClick=\"window.open('{$url}', 'OpenURL','height=600,width=800,modal=yes,alwaysRaised=yes'); event.returnValue = false; return false;\">$text</a>";
   }
 }

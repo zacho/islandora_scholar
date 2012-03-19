@@ -12,11 +12,4 @@
     </div>
     <br/>
   <?php endif; ?>
-  <?php if ($browse_by_department): ?>
-    <h4>Browse by Department</h4>
-    <br/>
-    <div id="ir-browse-by-department">
-      <?php print theme_item_list(array(l('Place Holder', 'fedorair/ir'))); ?>
-    </div>
-  <?php endif; ?>
 <?php endif; ?>
