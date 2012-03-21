@@ -136,7 +136,9 @@ function openurl_add_setting_validate(array $form, array &$form_state) {
     form_set_error('add_name', t('Settings for "%name" already exists.', array('%name' => $name)));
   }
   $validators = array('file_validate_is_image' => array());
-  $form_state['values']['file'] = file_save_upload('file', $validators, FILES_OPENURL, FILE_EXISTS_REPLACE);
+   $file = file_save_upload('file', $validators, FILES_OPENURL, FILE_EXISTS_REPLACE);
+   file_set_status($file, FILE_STATUS_PERMANENT);
+   $form_state['values']['file'] = $file;
 }
 
 /**

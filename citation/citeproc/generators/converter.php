@@ -76,8 +76,8 @@ function convert_mods_to_citeproc_jsons($mods_in) {
       'title' => convert_mods_to_citeproc_json_title($mods),
       'abstract' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:abstract'),
       'call-number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:classification'),
-      'collection-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:title'),
-      'container-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:titleInfo/mods:title'),
+      'collection-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo[not(@type)]/mods:title'),
+      'container-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:titleInfo[not(@type)]/mods:title'),
       'DOI' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="doi"]'),
       'edition' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:edition'),
       'event' => convert_mods_to_citeproc_json_event($mods),
@@ -92,7 +92,7 @@ function convert_mods_to_citeproc_jsons($mods_in) {
       'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher'),
       //'publisher-place' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:place/mods:placeTerm'),
       'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
-      'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmid"]'),
+      'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="accession"]'),
       'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"]'),
       'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"]'),
       'type' => convert_mods_to_citeproc_json_type($mods)), $names, $dates
@@ -483,18 +483,33 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
  */
 function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   $output = array();
-  $date_captured = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
-  if (!empty($date_captured)) {
-    $output['accessed']['raw'] = $date_captured;
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['accessed']['date-parts'] = array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d')));
   }
-  $date_issued = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued");
-  if (!empty($date_issued)) {
-    $output['issued']['raw'] = $date_issued;
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
+    $output['accessed']['raw'] = $date;
   }
-  $date_created = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated");
-  if (!empty($date_created) && empty($output['issued'])) {
-    $output['issued']['raw'] = $date_created;
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['issued']['date-parts'] = array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d')));
   }
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued");
+    $output['issued']['raw'] = $date;
+  }
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['issued']['date-parts'] = array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d')));
+  }
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated");
+    $output['issued']['raw'] = $date;
+  } 
   return $output;
 }
 
@@ -998,14 +1013,14 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
     $csl_data['accessed']['raw'] = (string) $date_captured[0];
   }
 
-  $date_issued = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
-  if (!empty($date_issued)) {
-    $csl_data['issued']['raw'] = (string) $date_issued[0];
+  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
+  if (!empty($date)) {
+    $csl_data['issued']['raw'] = (string) $date[0];
   }
 
-  $date_created = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
-  if (!empty($date_created) && empty($csl_data['issued'])) {
-    $csl_data['issued']['raw'] = (string) $date_created[0];
+  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
+  if (!empty($date) && empty($csl_data['issued'])) {
+    $csl_data['issued']['raw'] = (string) $date[0];
   }
 
 
