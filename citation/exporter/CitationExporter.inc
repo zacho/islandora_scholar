@@ -65,7 +65,7 @@ class CitationExporter {
   static public function Export() {
     if (self::ReadyToExport()) {
       $table = &self::GetExportTable();
-      $filename = $table['filename'];
+      $filename = file_move($table['filename'], file_directory_path(), FILE_EXISTS_REPLACE);
       $mime_type = $table['mime_type'];
       $download_filename = $table['download_filename'];
       $redirect = $table['redirect'];
