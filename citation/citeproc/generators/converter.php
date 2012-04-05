@@ -82,7 +82,7 @@ function convert_mods_to_citeproc_jsons($mods_in) {
       'edition' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:edition'),
       'event' => convert_mods_to_citeproc_json_event($mods),
       'event-place' => convert_mods_to_citeproc_json_event_place($mods),
-      //'genre' => 'article-journal', //convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:genre[@authority="marcgt"]'),
+      //'genre' => convert_mods_to_citeproc_json_genre($mods),
       'ISBN' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="isbn"]'),
       'volume' => (int) convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="volume"]/mods:number'),
       'issue' => (int) convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="issue"]/mods:number'),
@@ -90,18 +90,36 @@ function convert_mods_to_citeproc_jsons($mods_in) {
       'number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:partNumber'),
       'page' => convert_mods_to_citeproc_json_page($mods),
       'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher'),
-      //'publisher-place' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:place/mods:placeTerm'),
+      'publisher-place' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:place/mods:placeTerm'),
       'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
       'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="accession"]'),
-      'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"]'),
+      'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmc"]'),
       'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"]'),
-      'type' => convert_mods_to_citeproc_json_type($mods)), $names, $dates
+      'type' => convert_mods_to_citeproc_json_genre($mods)), $names, $dates
     );
     return $output;
   }
   else {
     watchdog('citeproc', 'Not a SimpleXMLElement!');
     return array();
+  }
+}
+
+/**
+ *
+ * @param type $mods 
+ */
+function convert_mods_to_citeproc_json_genre($mods) {
+  $genre = convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:genre');
+  switch (trim($genre)) {
+    case 'journal article':
+      return 'article-journal';
+    case 'book chapter':
+      return 'chapter';
+    case 'book':
+      return 'book';
+    default:
+      return 'article-journal';
   }
 }
 
