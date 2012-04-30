@@ -398,7 +398,9 @@ function convert_mods_to_citeproc_json_names(SimpleXMLElement $mods) {
       foreach ($names as $name) {
         add_mods_namespace($name);
         $role = convert_mods_to_citeproc_json_name_role($name, $valid_roles, $default_role);
-        $output[$role][] = convert_mods_to_citeproc_json_name($name);
+        if ($role !== FALSE) {
+          $output[$role][] = convert_mods_to_citeproc_json_name($name);
+        }
       }
     }
   }
@@ -481,7 +483,7 @@ function convert_mods_to_citeproc_json_name_corporate(SimpleXMLElement $name) {
  *   Gets the role of the given name.
  */
 function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $valid_roles, $default_role) {
-  module_load_include('inc', 'ir_citation', 'mods_to_citeproc_json/marcrelator_conversion');
+  module_load_include('inc', 'citeproc', 'generators/marcrelator_conversion');
   if (isset($name->role)) {
     $role = strtolower((string) $name->role->roleTerm);
     if (isset($name->role->roleTerm)) {
@@ -491,9 +493,9 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
         $role = marcrelator_code_to_term($role);
       }
     }
-    return array_key_exists($role, $valid_roles) ? $valid_roles[$role] : $default_role;
+    return array_key_exists($role, $valid_roles) ? $valid_roles[$role] : false;
   }
-  return $default_role;
+  return false;
 }
 
 /**
