@@ -141,15 +141,12 @@
                <text variable="issue" prefix="(" suffix=")"/>
                <text variable="page" prefix=": " suffix="."/>
                <choose>
-                  <if variable="number-pmid">
-                    <text variable="number-pmid" prefix=" PMID: " suffix="."/>
-                  </if> 
-                  <else-if variable="number-pmcid">
+                  <if variable="number-pmcid">
                     <text variable="number-pmcid" prefix=" PMCID: " suffix="."/>
-                  </else-if> 
-                  <else-if variable="number-nihmsid">
-                    <text variable="number-nihmsid" prefix=" NIHMSID: " suffix="."/>
-                  </else-if> 
+                  </if> 
+                  <else>
+                    <text prefix=" " suffix="." value="PMC Journal – In Process"/>
+                  </else> 
                </choose>
             </else>
          </choose>
