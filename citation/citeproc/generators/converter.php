@@ -115,6 +115,7 @@ function convert_mods_to_citeproc_json_genre($mods) {
     case 'journal article':
       return 'article-journal';
     case 'book chapter':
+    case 'book section':
       return 'chapter';
     case 'book':
       return 'book';

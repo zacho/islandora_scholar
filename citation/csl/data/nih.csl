@@ -143,10 +143,14 @@
                <choose>
                   <if variable="number-pmcid">
                     <text variable="number-pmcid" prefix=" PMCID: " suffix="."/>
-                  </if> 
+                  </if>
+                  <else-if variable="number-nihmsid">
+                     <text variable="number-nihmsid" prefix=" NIHMSID: " suffix="."/>
+                     <text prefix=" " suffix="." value="PMC Journal – In Process"/>
+                  </else-if> 
                   <else>
                     <text prefix=" " suffix="." value="PMC Journal – In Process"/>
-                  </else> 
+                  </else>
                </choose>
             </else>
          </choose>
