@@ -45,44 +45,45 @@ function scholar_search_form(array &$form_state) {
         '#title' => t('Field'),
         '#type' => 'select',
         '#default_value' => isset($values['terms'][$i]['field']) ? $values['terms'][$i]['field'] : 'coh_search_title',
-        '#options' => variable_get('islandora_solr_searchterms', array(
-          'coh_search_abstract' => t('Abstract'),
-          'coh_search_author_identifier' => t('Author Identifier'),
-          'coh_search_author' => t('Author'),
-          'coh_search_author_affiliation' => t('Author Affiliation'),
-          'coh_search_book_title' => t('Book Title'),
-          'coh_search_collection_series_title' => t('Collection/Series Title'),
-          'coh_search_group_author' => t('Group Author'),
-          'coh_search_editor' => t('Editor'),
-          'coh_search_grant_number' => t('Grant Number'),
-          'coh_search_funding_agency' => t('Funding Agency'),
-          'coh_search_isbn' => t('ISBN'),
-          'coh_search_issn' => t('ISSN'),
-          'coh_search_full_journal_title' => t('Full Journal Title'),
-          'coh_search_language' => t('Language'),
-          'coh_search_mesh_terms' => t('MeSH Terms'),
-          'coh_search_publication_type' => t('Publication Type'),
-          'coh_search_chemical_or_substance_name' => t('Chemical or Substance Name'),
-          'coh_search_secondary_source_id' => t('Secondary Source ID'),
-          'coh_search_title' => t('Title'),
-          'coh_search_doi' => t('DOI'),
-          'coh_search_conference' => t('Conference'),
-          'coh_search_keywords' => t('Keywords'),
-          'coh_search_book_group_authors' => t('Book Group Authors'),
-          'coh_search_times_cited' => t('Times Cited'), // Hack this one...
-          'coh_search_year_published' => t('Year published'),
-          'coh_search_tumor_model' => t('Tumour Model'),
-          'coh_search_biological_pathway' => t('Biological Pathway'),
-          'coh_search_status' => t('Status'),
-          'coh_search_osr_id_number' => t('OSR ID number'),
-          'coh_search_cancer_center_program_code' => t('Cancer Center Program Code'),
-          'coh_search_cancer_center_membership_level' => t('Cancer Center Membership Level'),
-          'coh_search_dept_id' => t('Dept ID'),
-          'coh_search_dept_name' => t('Dept Name'),
-          'coh_search_division_id' => t('Division ID'),
-          'coh_search_division_name' => t('Division Name'),
-          'coh_search_cores' => t('Cores'),
-        //'dc.text' => t('Text'),
+        '#options' => islandora_build_substitution_list(variable_get('islandora_solr_searchterms', <<<EOT
+dc.title ~ Title
+coh_search_abstract ~ Abstract
+coh_search_author_identifier ~ Author Identifier
+coh_search_author ~ Author
+coh_search_author_affiliation ~ Author Affiliation
+coh_search_book_title ~ Book Title
+coh_search_collection_series_title ~ Collection/Series Title
+coh_search_group_author ~ Group Author
+coh_search_editor ~ Editor
+coh_search_grant_number ~ Grant Number
+coh_search_funding_agency ~ Funding Agency
+coh_search_isbn ~ ISBN
+coh_search_issn ~ ISSN
+coh_search_full_journal_title ~ Full Journal Title
+coh_search_language ~ Language
+coh_search_mesh_terms ~ MeSH Terms
+coh_search_publication_type ~ Publication Type
+coh_search_chemical_or_substance_name ~ Chemical or Substance Name
+coh_search_secondary_source_id ~ Secondary Source ID
+coh_search_title ~ Title
+coh_search_doi ~ DOI
+coh_search_conference ~ Conference
+coh_search_keywords ~ Keywords
+coh_search_book_group_authors ~ Book Group Authors
+coh_search_times_cited ~ Times Cited
+coh_search_year_published ~ Year published
+coh_search_tumor_model ~ Tumour Model
+coh_search_biological_pathway ~ Biological Pathway
+coh_search_status ~ Status
+coh_search_osr_id_number ~ OSR ID number
+coh_search_cancer_center_program_code ~ Cancer Center Program Code
+coh_search_cancer_center_membership_level ~ Cancer Center Membership Level
+coh_search_dept_id ~ Dept ID
+coh_search_dept_name ~ Dept Name
+coh_search_division_id ~ Division ID
+coh_search_division_name ~ Division Name
+coh_search_cores ~ Cores
+EOT
         ))
       ),
       'search' => array(
@@ -92,12 +93,14 @@ function scholar_search_form(array &$form_state) {
       ),
       'hidden_submit' => array(// Used for when the user presses enter on the search field.
         '#type' => 'submit',
-        '#value' => 'Search',
+        '#value' => t('Search'),
         '#attributes' => array('style' => 'visibility:hidden;position:fixed;top:-1000px;right:-1000px;')
       ),
       'add' => array(
         '#type' => 'button',
-        '#value' => 'Add Field',
+        '#value' => '+',
+        '#attributes' => array('title' => t('Add field')),
+        '#name' => 'add-field-' . $i,
         '#ahah' => array(
           'path' => MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD,
           'wrapper' => 'scholar-search-terms',
@@ -110,7 +113,8 @@ function scholar_search_form(array &$form_state) {
       $term['remove'] = array(
         '#type' => 'button',
         '#field' => $i,
-        '#value' => 'Remove Field',
+        '#value' => '-',
+        '#attributes' => array('title' => t('Remove field')),
         '#name' => 'remove-field-' . $i,
         '#ahah' => array(
           'path' => MENU_SCHOLAR_ADVANCED_SEARCH_REMOVE_FIELD,
@@ -134,14 +138,14 @@ function scholar_search_form(array &$form_state) {
         '#default_value' => isset($values['sort']) ? $values['sort'] : 'score',
         '#options' => array(
           'score' => t('Relevance'),
-          'coh_sort_title' => t('Title'),
-          'coh_sort_date' => t('Date Added'),
+          'mods_title_mlt' => t('Title'),
+          'mods_dateIssued_s' => t('Date Issued'),
         ),
       ),
       'order' => array(
         '#title' => t('Order'),
         '#type' => 'select',
-        '#default_value' => isset($values['order']) ? $values['order'] : 'asc',
+        '#default_value' => isset($values['order']) ? $values['order'] : 'desc',
         '#options' => array(
           'asc' => t('Ascending'),
           'desc' => t('Descending'),
@@ -202,7 +206,7 @@ function scholar_search_form_store_sort_in_session(array &$form_state) {
 }
 
 function scholar_search_advanced_add_field() {
-  module_load_include('inc', 'xml_form_elements', 'Ahah');
+  module_load_include('inc', 'php_lib', 'Ahah');
   list($form_id, $form_build_id, $form, $form_state) = Ahah::getFormInfo();
   $form = Ahah::processForm($form_id, $form, $form_state);
   $form_state['num_terms'] = count(element_children($form['terms'])) + 1;
@@ -211,7 +215,7 @@ function scholar_search_advanced_add_field() {
 }
 
 function scholar_search_advanced_remove_field() {
-  module_load_include('inc', 'xml_form_elements', 'Ahah');
+  module_load_include('inc', 'php_lib', 'Ahah');
   list($form_id, $form_build_id, $form, $form_state) = Ahah::getFormInfo();
   $form = Ahah::processForm($form_id, $form, $form_state);
   $field = $form_state['clicked_button']['#field'];
