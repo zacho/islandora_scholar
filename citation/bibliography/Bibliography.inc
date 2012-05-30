@@ -31,7 +31,7 @@ class Bibliography {
 
   /**
    * Get the class used to store the pids in the bibliography.
-   * 
+   *
    * @param int $uid
    *   A drupal user id.
    */
@@ -48,7 +48,7 @@ class Bibliography {
 
   /**
    * Checks to see if the given pid is an citation object.
-   * 
+   *
    * @param string $pid
    */
   private static function IsCitation($pid) {
@@ -95,8 +95,9 @@ class Bibliography {
    * @return boolean
    *   TRUE if the given fedora object exists within the bibliography, FALSE otherwise.
    */
-  public static function AddCitation($pid, $uid = NULL) {
-    if (self::IsCitation($pid) && !self::Exists($pid)) {
+  public static function AddCitation($pid, $uid = NULL, $check = TRUE) {
+    $add = $check ? self::IsCitation($pid) && !self::Exists($pid) : TRUE;
+    if ($add) {
       $uid = self::GetUID($uid);
       return call_user_func(array(self::GetSource($uid), 'AddCitation'), $pid, $uid);
     }
@@ -105,19 +106,21 @@ class Bibliography {
 
   /**
    * Adds the colleciton of given fedora object to the set of citations if possible.
-   * 
+   *
    * @param array $pids
    *   A collection of pids for citation objects.
    * @param int $uid
    *   The drupal users id, this user's bibliography will be checked.
-   * 
+   * @param boolean $check
+   *   Check the PID before adding it.
+   *
    * @return int
    *   The number of Citations Added.
    */
-  public static function AddCitations(array $pids, $uid = NULL) {
+  public static function AddCitations(array $pids, $uid = NULL, $check = TRUE) {
     $count = 0;
     foreach ($pids as $pid) {
-      if (self::AddCitation($pid, $uid)) {
+      if (self::AddCitation($pid, $uid, $check)) {
         $count++;
       }
     }
@@ -142,12 +145,12 @@ class Bibliography {
 
   /**
    * Removes the collection of given fedora object from the set of citations if possible.
-   * 
+   *
    * @param array $pids
    *   A collection of pids for citation objects.
    * @param int $uid
    *   The drupal users id, this user's bibliography will be checked.
-   * 
+   *
    * @return int
    *   The number of Citations Removed.
    */
