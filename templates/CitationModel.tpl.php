@@ -3,7 +3,7 @@
     <h3 style="display:inline">
       <?php print t('Citation:') ?>
     </h3> 
-    <select id="style" class="form-select" onchange="jQuery('.citeproc-bibliography').attr('id', this.value); Drupal.attachBehaviors();">
+    <select id="style" class="form-select" onchange="jQuery('.citeproc-bibliography').attr('id', this.value); Drupal.settings.citeproc.refresh = true; Drupal.attachBehaviors();">
       <?php foreach ($styles as $id => $name) : ?>
         <option value="<?php print $id ?>"><?php print $name ?></option>
       <?php endforeach; ?>
@@ -11,6 +11,9 @@
     <?php print print_r($citation[0], TRUE); ?>
     <?php print drupal_get_form('islandora_bibliography_citation_form', $pid); ?>
   </div>
+  <?php if (!empty($accessnum)): ?>
+    <a id="open-url-link" class="overview-field" href="http://linksource.ebsco.com/linking.aspx?ID=12411?sid=Entrez:PubMed&amp;id=pmid:<?php print $accessnum; ?>" target="_blank"><img alt="Click here to read" id="linkout-icon-unknown-DB__1__13__4178" border="0" src="<?php print $open_url_img; ?>"></a>
+  <?php endif; ?>
   <?php if (!empty($abstract)): ?>
     <div id="abstract" class="overview-field">
       <h3><?php print t('Abstract:') ?></h3>
@@ -21,6 +24,12 @@
     <div id="subject" class="overview-field">
       <h3><?php print t('Subject Heading(s):') ?></h3>
       <div id="subject-content" class="overview-field-content"><?php print print_r($subject, TRUE); ?></div>
+    </div>
+  <?php endif; ?>
+  <?php if (!empty($work_type)): ?>
+    <div id="work-type" class="overview-field">
+      <h3><?php print t('Work Type:') ?></h3>
+      <div id="work-type-content" class="overview-field-content"><?php print print_r($work_type, TRUE); ?></div>
     </div>
   <?php endif; ?>
   <?php if (!empty($grant_number)): ?>
@@ -57,6 +66,16 @@
     <div id="peer-reviewed" class="overview-field">
       <h3><?php print t('Peer Reviewed:') ?></h3>
       <div id="peer-reviewed-content" class="overview-field-content"><?php print print_r($peer_reviewed, TRUE); ?></div>
+    </div>
+  <?php endif; ?>
+  <?php if (!empty($url)):?>
+    <div id="urls" class="overview-field">
+      <h3><?php print t('Publisher URL:') ?></h3>
+      <ul>
+      <?php foreach (explode('<br/>', $url) as $a_url):?>
+        <li class="overview-field-content"><?php print l($a_url, $a_url); ?></li>
+      <?php endforeach; ?>
+      </ul>
     </div>
   <?php endif; ?>
 </div>

@@ -13,8 +13,14 @@ define('MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD', 'scholar/search/advanced/field/
 define('MENU_SCHOLAR_ADVANCED_SEARCH_REMOVE_FIELD', 'scholar/search/advanced/field/remove');
 define('THEME_SCHOLAR_HOME', 'scholar_home');
 define('THEME_SCHOLAR_SEARCH_ITEM', 'scholar_search_item');
+define('THEME_SCHOLAR_SEARCH_ITEM_ALT', 'scholar_search_alt_item');
 define('THEME_SCHOLAR_SEARCH_TABLE', 'scholar_search_results_table');
 define('THEME_SCHOLAR_OVERVIEW_PANEL_CITATION', 'scholar_overview_panel_citation');
+
+/**
+ * Includes
+ */
+module_load_include('inc', 'scholar', 'Batch'); // To Deal with missing function during submit callback, worked at one time.
 
 /**
  * Implements hook_menu().
@@ -59,6 +65,11 @@ function scholar_theme() {
       'template' => 'templates/SearchItem',
       'file' => 'IslandoraSolrResultsCitation.inc',
       'arguments' => array('pid' => NULL, 'style' => NULL)
+    ),
+    THEME_SCHOLAR_SEARCH_ITEM_ALT => array(
+      'template' => 'templates/SearchItem',
+      'file' => 'IslandoraSolrResultsCitation.inc',
+      'arguments' => array('solr_doc' => NULL, 'style' => NULL)
     ),
     THEME_SCHOLAR_SEARCH_TABLE => array(
       'file' => 'IslandoraSolrResultsCitation.inc',
@@ -159,6 +170,114 @@ function scholar_form_content_model_viewer_ingest_metadata_form_alter(array &$fo
   }
 }
 
+function _scholar_update_mods_name_node(&$node, $name_info) {
+  //1. Create new nameparts.
+  $given = $node->ownerDocument->createElement('namePart', $name_info['given']);
+  $given->setAttribute('type', 'given');
+  $family = $node->ownerDocument->createElement('namePart', $name_info['family']);
+  $family->setAttribute('type', 'family');
+  
+  //2. Remove the old nameparts.
+  $toRemove = array();  //It may be possible to remove them directly, I'm not sure...
+  foreach ($node->getElementsByTagName('namePart') as $np) {
+    $toRemove[] = $np;
+  }
+  foreach ($toRemove as $np) {
+    $node->removeChild($np);
+  }
+  
+  //3. Add the new nameparts.
+  $node->appendChild($given);
+  $node->appendChild($family);
+}
+
+function scholar_name_tabs_rels_ext_pusher($form, &$form_state) {
+  //1. Get all of the docs which are related to this person...
+  $person_pid = $form['values']['pid'];
+  $query = <<<EOQ
+PREFIX ir-rel: <info:islandora/ir-relation#>
+SELECT \$obj
+FROM <#ri>
+WHERE {
+  \$obj ir-rel:hasAuthority <info:fedora/$person_pid> .
+}
+EOQ;
+
+  $ri_url = variable_get('fedora_repository_url', 'http://localhost:8080/fedora/risearch');
+  $params = array(
+    'type' => 'tuples',
+    'flush' => 'true',
+    'format' => 'sparql',
+    'lang' => 'sparql',
+    'stream' => 'on',
+    'query' => $query
+  );
+  
+  module_load_include('inc', 'fedora_repository', 'api/fedora_utils');
+  $sparql_results = new SimpleXMLElement(do_curl_improved($ri_url, $params));
+  
+  module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+  
+  $name_info = array();
+  foreach ($form_state['values']['cpfdesc']['general_ident']['ident']['name_entries'] as $name_entry) {
+    $fore = $name_entry['forename'];
+    $sur = $name_entry['surname'];
+    if ($name_entry['primary'] === 'primary') {
+      $name_info['given'] = $fore;
+      $name_info['family'] = $sur;
+    }
+    else {
+      //TODO: implement IDs for other variants, and use them
+    }
+  }
+  
+  //2. For each doc;
+  foreach ($sparql_results->results->result as $result) {
+    $uri = $result->obj->attributes['uri'];
+    $doc_pid = substr($uri, strrpos($uri, '/'));
+    //2.1. load the MODS
+    $item = new Fedora_Item($doc_pid);
+    $mods_raw = $item->get_datastream_dissemination('MODS');
+    $m_xpath = new DOMXPath(new DOMDocument($mods_raw));
+    $m_xpath->registerNamespace('m', 'http://www.loc.gov/mods/v3');
+    //2.2. Update the relevant name entries
+    foreach ($m_xpath->query('//m:name[@type="personal" and @authorityURI="info:islandora/ir-relation#" and @valueURI]') as $name) {
+      $val = $name->attributes['valueURI'];
+      if ($val->value === $person_pid) {
+        //Related to the primary variant
+        _scholar_update_mods_name_node($name, $name_info);
+      }
+      else {
+        //Related to one of the alternatives... Need to identify somehow...
+        //TODO:  Implement
+      }
+    }
+    
+    //2.3. Save the MODS back to the item
+    $xml = $m_xpath->document->saveXML();
+    dd($xml, 'Modified XML');
+    //$item->modify_datastream_by_value($xml, 'MODS', 'MODS Metadata', 'text/xml', FALSE, 'Modified by Islandora Authority Module', FALSE);
+  }
+  //3. ???
+  //4. PROFIT!
+}
+
+function scholar_name_tabs_validator($form, &$form_state) {
+  if ($form_state['values']['content_model_pid'] === 'ir:authorityCModel' && $form_state['values']['dsid'] === 'EAC-CPF') {
+    //Check that there is only one primary name variant.
+    dd($form_state['values'], 'Values');
+    $count = 0;
+    foreach ($form_state['values']['cpfdesc']['general_ident']['ident']['name_entries'] as $entry) {
+      if ($entry['primary'] === 'primary') {
+        $count++;
+      }
+    }
+    if ($count !== 1) {
+      form_set_error('form', t('There must be exactly one primary name variant!'));
+    }
+  }
+}
+
 /**
  * Implements hook_form_alter().
  * 
@@ -173,16 +292,28 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
   if ($form_state['storage']['step'] == 2) {
     $pid = $form['pid']['#value'];
     $item = new Fedora_Item($pid);
-    if ($item->exists() && isset($item->datastreams['MODS'])) {
-      $mods = $item->get_datastream_dissemination('MODS');
-      $mods = trim($mods);
-      if (!empty($mods)) {
-        $doc = new DOMDocument();
-        $doc->loadXML($mods);
-        module_load_include('inc', 'csl', 'CSL');
-        $names = CSL::GetNames();
-        $style = citeproc_style('APA');
-        $bibliography = citeproc_bibliography_from_mods($style, $doc);
+    //dd($form, 'Form');
+    if ($item->exists()) {
+      if ($form['content_model_pid']['#value'] === 'ir:citationCModel' && $form['dsid']['#value'] === 'MODS' && isset($item->datastreams['MODS'])) { //Should look at which DS the stream is associated with...
+        $mods = $item->get_datastream_dissemination('MODS');
+        $mods = trim($mods);
+        if (!empty($mods)) {
+          $doc = new DOMDocument();
+          $doc->loadXML($mods);
+          
+          $style = citeproc_default_style();
+          $bibliography = citeproc_bibliography_from_mods($style, $doc);
+          $citation = array('#value' => $bibliography->render());
+          //TODO: Add submit handler to handle creating RELS-EXT relationships (and PDF file?)
+        }
+      }
+      elseif ($form['content_model_pid']['#value'] === 'ir:authorityCModel') {
+        //Add validation handler so as to enforce only having a single primary name variant.
+        $val =& $form['#validate'];
+        $v = 'scholar_name_tabs_validator';
+        if (!in_array($v, $val)) {
+          $val[] = $v;
+        }
       }
     }
     $title = array(
@@ -191,9 +322,167 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
       '#value' => check_plain($form_state['values']['forms']),
       '#suffix' => '</h3>'
     );
-    $citation = array('#value' => $bibliography->render());
-    array_unshift($form, $citation);
+    if(isset($citation)) { array_unshift($form, $citation); }
     array_unshift($form, $title);
     $form['#attributes'] = array('enctype' => 'multipart/form-data'); // Allow the uploading of files.
   }
+}
+
+function _scholar_get_mods_from_solr_doc($doc, $solr_mods_field) {
+  $mods = '';
+  $pid = $doc->PID;
+          
+  if (isset($doc->{$solr_mods_field})) {
+    $mods = trim($doc->{$solr_mods_field});
+  }
+ 
+  if (empty($mods)) {
+    //Try to get from Fedora...
+    module_load_include('inc', 'fedora_repository', 'api/fedora_item');
+    $item = new Fedora_Item($pid);
+    if ($item->exists() && $item->datastreams['MODS']) {
+      $mods = trim($item->get_datastream_dissemination('MODS'));
+    }
+    
+    if (empty($mods)) {
+      watchdog('islandora_scholar', 'Failed loading MODS');
+    }
+  }
+  else {
+    //Do nothing; got MODS from Solr.
+  }
+  
+  return $mods;
+}
+
+/**
+ * @param $doc              A Solr document object
+ * @param $style            A CiteprocJSStyle object, or NULL (to use the default)
+ * @param $solr_mods_field  A field in the Solr object, which holds the entire contents of the MODS document (with entities escaped)
+ * @param $format           Flag for which format to return; 'text' or 'php' will return the citation
+ *  as pure markup (using citeproc-php), which 'js' will use citeproc-js
+ * @returm The citation, or an empty string.
+ */
+function scholar_citation_from_solr_doc($doc, $style=NULL, $solr_mods_field='mods_fullxml_store', $format='js') {
+  $pid = $doc->PID;
+  $times = array();
+  
+  if (module_exists('citeproc')) {
+    $cached_raw = NULL;
+    $cache_id = NULL;
+    
+    if(CITEPROC_DO_CACHE) {
+      $cache_id = CITEPROC_CACHE_PREFIX . '_' . $pid;
+      $cached_raw = cache_get($cache_id);
+    }
+  
+    if (is_null($style)) {
+      $style = citeproc_default_style();
+    }
+    elseif (is_string($style)) {
+      $style = citeproc_style($style);
+      if ($style === FALSE) {
+        $style = citeproc_default_style();
+      }
+    }
+    
+    switch($format) {
+      case 'text': //Fallthrough
+      case 'php':
+        $data_array = NULL;
+        if (!empty($cache_raw)) {
+          $data_array = $cache_raw->data;
+        }
+        else {
+          $mods = _scholar_get_mods_from_solr_doc($doc, $solr_mods_field);
+
+          if (!empty($mods)) { 
+            module_load_include('php', 'citeproc', 'generators/converter');
+            $data_array = convert_mods_to_citeproc_jsons($mods);
+          }
+        }
+        
+        if (!is_null($data_array)) {
+          module_load_include('php', 'citeproc', 'generators/converter');
+          module_load_include('php', 'citeproc', 'lib/citeproc-php/CiteProc');
+          $citeproc = is_string($style)?
+            new citeproc($style):
+            new citeproc($style->toJSON());
+          
+          array_walk_recursive($data_array, 'convert_mods_to_citeproc_jsons_escape');
+          $data_object = _citeproc_array_to_object($data_array);
+          //dd($data_object);
+          return $citeproc->render($data_object, 'bibliography');
+        }
+      break;
+      case 'js':
+      default:
+        $bibliograpy = NULL;
+        if (!empty($cache_raw)) {
+          $bibliography = citeproc_bibliography_from_raw_array($style, $cache_raw->data);
+        }
+        else {
+          $mods = _scholar_get_mods_from_solr_doc($doc, $solr_mods_field);
+
+          if (!empty($mods)) { 
+            $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
+          }
+        }
+        
+        if (!is_null($bibliography)) {
+          $toReturn = $bibliography->render();
+          return $toReturn;
+        }
+    }
+  }
+  return '';
+}
+
+function scholar_required_fedora_objects() {
+  $module_path = drupal_get_path('module', 'scholar');
+  
+  //FIXME: Maybe this FOXML stuff should be broken up into individual DSs, so versioning can happen
+  return array(
+    'scholar' => array(
+      'module' => 'scholar',
+      'title' => 'Islandora Scholar',
+      'objects' => array(
+        array(
+          'pid' => 'ir:top',
+          'label' => 'Islandora Scholar Root Collection',
+          'foxml_file' => "$module_path/models/ir:top/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCModel',
+          'label' => 'Islandora Scholar Citation Content Model',
+          'foxml_file' => "$module_path/models/ir:citationCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCollectionCModel',
+          'label' => 'Islandora Scholar Citation Collection Content Model',
+          'foxml_file' => "$module_path/models/ir:citationCollectionCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:citationCollection',
+          'label' => 'Islandora Scholar Citation Collection',
+          'foxml_file' => "$module_path/models/ir:citationCollection/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:authorityCModel',
+          'label' => 'Islandora Scholar Author(ity) Content Model',
+          'foxml_file' => "$module_path/models/ir:authorityCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:authorityCollectionCModel',
+          'label' => 'Islandora Scholar Author(ity) Collection Content Model',
+          'foxml_file' => "$module_path/models/ir:authorityCollectionCModel/FOXML.xml"
+        ),
+        array(
+          'pid' => 'ir:authorityCollection',
+          'label' => 'Islandora Scholar Author(ity) Collection',
+          'foxml_file' => "$module_path/models/ir:authorityCollection/FOXML.xml"
+        ),
+      ),
+    ),
+  );
 }

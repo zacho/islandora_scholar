@@ -31,8 +31,7 @@ function islandora_bibliography_form(array &$form_state) {
     return array(
       'fieldset' => array(
         '#type' => 'fieldset',
-        '#title' => t('My Citations'),
-        '#description' => t('<p>Here you can remove or export citations from your bibliography.</p>'),
+        //'#title' => t('My Citations'),
         'table' => islandora_bibilgraphy_form_table($pids),
         'preview_title' => array(
           '#value' => t('Preview Citations'),
@@ -64,8 +63,8 @@ function islandora_bibliography_form(array &$form_state) {
           '#type' => 'select',
           '#length' => 50,
           '#options' => array(
-            'RIS' => 'RIS',
-            'RTF' => 'RTF',
+            'RIS' => 'RIS (Endnote format)',
+            //'RTF' => 'RTF (word proccessor format)', //FIXME:  Need a new RTF library which supports unicode.
             'PDF' => 'PDF',
           )
         ),
@@ -123,20 +122,23 @@ function islandora_bibilgraphy_form_table(array $pids) {
       '#options' => array_fill_keys($pids, ''),
     ),
   );
+  $row_count = 0;
   $rows = &$table['rows'];
   foreach ($pids as $pid) {
     list($title, $authors) = islandora_bibilgraphy_form_get_title_authors($pid);
     $rows[] = array(
       '#pid' => $pid,
-      'title' => array('#value' => check_plain($title)),
+      'title' => array('#value' => l($title, "fedora/repository/$pid")),
       'author' => array('#value' => check_plain($authors)),
       'remove' => array(
         '#type' => 'submit',
         '#value' => t('Remove'),
+        '#name' => 'remove-citation' . $row_count, // Give a unique name to each button
         '#pid' => $pid,
         '#submit' => array('islandora_bibliography_form_remove_citation_submit')
       )
     );
+    $row_count++;
   }
   return $table;
 }
@@ -174,7 +176,7 @@ function islandora_bibliography_form_remove_citation_submit(array $form, array &
   module_load_include('inc', 'islandora_bibliography', 'Bibliography');
   $pid = $form_state['clicked_button']['#pid'];
   Bibliography::RemoveCitation($pid);
-  drupal_set_message(t('Removed Citation'));
+  drupal_set_message(t('Removed citation'));
 }
 
 /**
@@ -217,7 +219,7 @@ function islandora_bibliography_form_remove(array $form, array &$form_state) {
   $selections = array_filter($form_state['values']['table']['selections']);
   $pids = array_keys($selections);
   Bibliography::RemoveCitations($pids);
-  drupal_set_message(t('Removed %num Citation(s)', array('%num' => count($pids))));
+  drupal_set_message(format_plural(count($pids), 'Removed 1 citation', 'Removed @count citations'));
 }
 
 /**
@@ -270,6 +272,9 @@ function islandora_bibilgraphy_form_get_mods($pid) {
  *   HTML that renders a table of settings for datastreams.
  */
 function theme_islandora_bibliography_form_table(array $element) {
+  
+  $caption = t('Remove or export citations from your bibliography');
+
   $rows = array();
   foreach (element_children($element['rows']) as $child) {
     $setting = $element['rows'][$child];
@@ -287,5 +292,5 @@ function theme_islandora_bibliography_form_table(array $element) {
     );
   }
   $attributes = isset($element['#id']) ? array('id' => $element['#id']) : NULL;
-  return theme_table($element['#header'], $rows, $attributes);
+  return theme_table($element['#header'], $rows, $attributes, $caption);
 }

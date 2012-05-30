@@ -26,7 +26,7 @@ class CitationModel extends AbstractModel {
    * 
    * @var Fedora_Item
    */
-  protected $item;
+  public $item;
 
   /**
    * Creates CitationModel instance.
@@ -70,15 +70,28 @@ class CitationModel extends AbstractModel {
    */
   public function getCitation($style_name) {
     if (isset($this->item->datastreams['MODS'])) {
-      $mods = $this->item->get_datastream_dissemination('MODS');
-      $mods = trim($mods);
-      if (!empty($mods)) {
-        $doc = new DOMDocument();
-        $doc->loadXML($mods);
-        $style = citeproc_style($style_name);
-        $bibliography = citeproc_bibliography_from_mods($style, $doc);
-        return array($bibliography->getID(), $bibliography->render());
+      $style = citeproc_style($style_name);
+
+      $cached_raw = NULL;
+      $cache_id = NULL;
+      
+      if(CITEPROC_DO_CACHE) {
+        $cached_raw = cache_get($cache_id);
+        $cache_id = CITEPROC_CACHE_PREFIX . '_' . $pid;
       }
+      
+      $bibliography = NULL;
+      if (!empty($cached_raw)) {
+        $bibliography = citeproc_bibliography_from_raw_array($style, $cached_raw->data);
+      }
+      else {
+        $mods = $this->item->get_datastream_dissemination('MODS');
+        $mods = trim($mods);
+        if (!empty($mods)) {
+          $bibliography = citeproc_bibliography_from_mods($style, $mods, $cache_id);
+        }
+      }
+      return array($bibliography->getID(), $bibliography->render());
     }
     return array(NULL, '');
   }
@@ -94,8 +107,14 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
   module_load_include('inc', 'csl', 'CSL');
   module_load_include('inc', 'islandora_bibliography', 'CitationForm');
   $pid = $variables['pid'];
-  $item = new Fedora_Item($pid);
+  // Open URL Image
+  //XXX:  This should most definitely be moved out into the module preprocess function city_of_hope_preprocess_scholar_overview_panel_citation
+  if (module_exists('city_of_hope')) {
+    $variables['open_url_img'] = url(drupal_get_path('module', 'city_of_hope').'/images/openurl.jpg');
+  }
+  //$item = new Fedora_Item($pid);
   $model = new CitationModel($pid);
+  $item = & $model->item;
   // Citations
   $styles = CSL::GetNames();
   foreach ($styles as $name) {
@@ -110,14 +129,24 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
     if (!empty($mods)) {
       $mods = new SimpleXMLElement($mods);
       $mods->registerXPathNamespace('mods', 'http://www.loc.gov/mods/v3');
-      $variables['abstract'] = implode('<br/>', $mods->xpath('/mods:mods/mods:abstract'));
-      $variables['subject'] = implode('<br/>', $mods->xpath('/mods:mods/mods:subject/mods:topic'));
-      $variables['grant_number'] = implode('<br/>', $mods->xpath('/mods:mods/mods:name[@type="corporate"]/mods:role[mods:roleTerm[@type="text"]="funding agency"]/../mods:description[@type="grant number"]'));
-      $variables['funding_agency'] = implode('<br/>', $mods->xpath('/mods:mods/mods:name[@type="corporate"]/mods:role[mods:roleTerm[@type="text"]="funding agency"]/../mods:namePart'));
-      $variables['core_facility'] = implode('<br/>', $mods->xpath('/mods:mods/mods:note[@type="core facilities"]'));
-      $variables['source_system'] = implode('<br/>', $mods->xpath('/mods:mods/mods:recordInfo/mods:recordOrigin'));
-      $variables['ccsg_program'] = implode('<br/>', array()); // @todo
-      $variables['peer_reviewed'] = implode('<br/>', $mods->xpath('/mods:mods/mods:note[@type="peer reviewed"]'));
+      $parts = array(
+        'abstract' => '/mods:mods/mods:abstract',
+        'subject' => '/mods:mods/mods:subject/mods:topic',
+        'grant_number' => '/mods:mods/mods:name[@type="corporate"]/mods:role[mods:roleTerm[@type="text"]="funding agency"]/../mods:description[@type="grant number"]',
+        'funding_agency' => '/mods:mods/mods:name[@type="corporate"]/mods:role[mods:roleTerm[@type="text"]="funding agency"]/../mods:namePart',
+
+        'work_type' => '/mods:mods/mods:note[@type="work type"]',
+        'core_facility' => '/mods:mods/mods:note[@type="core facilities"]',
+        'source_system' => '/mods:mods/mods:recordInfo/mods:recordOrigin',
+        'ccsg_program' => 'string()', // @todo
+        'peer_reviewed' => '/mods:mods/mods:note[@type="peer reviewed"]',
+        'accessnum' => '/mods:mods/mods:identifier[@type="accessnum"]',
+        'url' => '/mods:mods/mods:location/mods:url'
+      );
+
+      foreach ($parts as $key => $xpath) {
+        $variables[$key] = implode('<br/>', $mods->xpath($xpath));
+      }
     }
   }
 }

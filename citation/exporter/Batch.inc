@@ -34,10 +34,13 @@ function citation_exporter_batch_export(array $pids, $style, $file_format) {
       $operations = citation_exporter_batch_get_pdf_operations($pids, $style);
       break;
   }
+  
   if (count($operations) > 0) {
     $batch = array(
       'title' => t('Exporting Citations to File'),
       'operations' => $operations,
+      'init_message' => 'Preparing to Export Citations',
+      'progress_message' => 'Exporting Citations',
       'finished' => 'citation_exporter_batch_finished',
     );
     batch_set($batch);
@@ -50,9 +53,9 @@ function citation_exporter_batch_export(array $pids, $style, $file_format) {
  * @param array $pids 
  */
 function citation_exporter_batch_store_pids_in_file($filename, array $pids) {
-  $file = fopen($filename, 'w');
+  $file = fopen($filename, 'wb');
   foreach ($pids as $pid) {
-    fwrite($file, trim($pid) . "\n");
+    fwrite($file, trim($pid) ."\n");
   }
   fclose($file);
 }
@@ -63,7 +66,7 @@ function citation_exporter_batch_store_pids_in_file($filename, array $pids) {
  * @return type 
  */
 function citation_exporter_batch_get_pids_from_file($filename) {
-  $file = fopen($filename, 'r');
+  $file = fopen($filename, 'rb');
   $pids = array();
   while (($pid = fgets($file)) !== false) {
     $pids[] = trim($pid);
@@ -78,13 +81,17 @@ function citation_exporter_batch_get_pids_from_file($filename) {
 function citation_exporter_batch_get_num_pids_from_file($filename, $num = 1) {
   $remaining = 0;
   $ret = array();
-  $pids = file($filename);
+  $pids = citation_exporter_batch_get_pids_from_file($filename);
   if ($pids) {
-    for ($i = 0; $i < $num; $i++) {
-      $ret[] = trim(array_shift($pids));
-    }
-    citation_exporter_batch_store_pids_in_file($filename, $pids);
-    $remaining = count($pids);
+    //Trim selected number of PIDs, to return.
+    $ret = array_map('trim', array_slice($pids, 0, $num));
+    
+    //Save the remaining PIDs back to the file.
+    $pids_remaining = array_slice($pids, $num);
+    citation_exporter_batch_store_pids_in_file($filename, $pids_remaining);
+    
+    //Get the count of remaining PIDs to return.
+    $remaining = count($pids_remaining);
   }
   return array($ret, $remaining);
 }
@@ -94,7 +101,10 @@ function citation_exporter_batch_get_num_pids_from_file($filename, $num = 1) {
  * @param type $redirect
  * @param array $context 
  */
-function citation_exporter_batch_redirect($redirect, array &$context) {
+function citation_exporter_batch_redirect($redirect, array $file_to_unlink, array &$context) {
+  foreach ($file_to_unlink as $file) {
+    unlink($file);
+  }
   $context['results']['redirect'] = $redirect;
 }
 

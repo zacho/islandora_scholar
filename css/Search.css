@@ -10,16 +10,23 @@ div.form-item select {
 }*/
 
 
-div.form-item { 
+#scholar-search-form div.form-item { 
   display: inline-block;
 }
 
-.progress-disabled, .ahah-progress, .ahah-progress throbber {
+#scholar-search-form  .progress-disabled, 
+#scholar-search-form  .ahah-progress, 
+#scholar-search-form  .ahah-progress throbber {
   float:none; 
 }
-.ahah-progress {
+#scholar-search-form .ahah-progress {
   display: inline-block;
 }
+
+#scholar-search-results-form > div > div {
+  float: left;
+}
+
 /*
 .scholar_search_item {
   margin: 1em;

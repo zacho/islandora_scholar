@@ -16,27 +16,31 @@
  * @return array
  */
 function scholar_search_form(array &$form_state) {
-  drupal_add_js(drupal_get_path('module', 'scholar') . '/js/Ahah.js');
-  drupal_add_css(drupal_get_path('module', 'scholar') . '/css/Search.css');
-  $num_terms = 1;
-  if (isset($form_state['values'])) {
-    $values = $form_state['values'];
-    $num_terms = isset($form_state['num_terms']) ? $form_state['num_terms'] : $num_terms;
-  }
-  else if (isset($_SESSION['scholar']['search']['values'])) {
-    /**
-     * Handles the changing of URL from the initial search page to the actual search page.
-     */
+  $path = drupal_get_path('module', 'scholar');
+  //drupal_add_js($path . '/js/fix-jquery-update.js', 'theme');
+  drupal_add_js($path . '/js/Ahah.js');
+  drupal_add_css($path . '/css/Search.css');
+  module_load_include('inc', 'islandora_solr_search', 'includes/common');
+  if (isset($_SESSION['scholar']['search']['values'])) {
+    // Handles the changing of URL from the initial search page to the actual search page.
+     
     $values = $_SESSION['scholar']['search']['values'];
-    $num_terms = count($values['terms']);
-    unset($_SESSION['scholar']['search']['values']); // Forget this for the next page visit.
+    unset($_SESSION['scholar']['search']['values']); //FIXME: This should be done if we navigate away from the results... Or handled a level higher, so that you're passing in the form state.
+  }
+  elseif (!empty($form_state['values'])) {
+    $values = $form_state['values'];
+  }
+  else {
+    $values = array( //Need at least one term to draw the search box.
+      'terms' => array('')
+    );
   }
   $terms = array(
-    '#prefix' => '<div id="scholar-search-terms">',
+    '#prefix' => '<div id="scholar-search-terms"><h3 class="search-title">' . t('Search') . '</h3>',
     '#suffix' => '</div>',
     '#tree' => TRUE,
   );
-  for ($i = 0; $i < $num_terms; $i++) {
+  foreach ($values['terms'] as $i => $value) {
     $term = array(
       '#tree' => TRUE,
       '#prefix' => '<div>',
@@ -44,7 +48,7 @@ function scholar_search_form(array &$form_state) {
       'field' => array(
         '#title' => t('Field'),
         '#type' => 'select',
-        '#default_value' => isset($values['terms'][$i]['field']) ? $values['terms'][$i]['field'] : 'coh_search_title',
+        '#default_value' => isset($value['field']) ? $value['field'] : 'coh_search_title',
         '#options' => islandora_build_substitution_list(variable_get('islandora_solr_searchterms', <<<EOT
 dc.title ~ Title
 coh_search_abstract ~ Abstract
@@ -87,9 +91,9 @@ EOT
         ))
       ),
       'search' => array(
-        '#title' => t('Search'),
+        '#title' => t('Search terms'),
         '#type' => 'textfield',
-        '#default_value' => isset($values['terms'][$i]['search']) ? $values['terms'][$i]['search'] : NULL,
+        '#default_value' => isset($value['search']) ? $value['search'] : NULL,
       ),
       'hidden_submit' => array(// Used for when the user presses enter on the search field.
         '#type' => 'submit',
@@ -97,7 +101,7 @@ EOT
         '#attributes' => array('style' => 'visibility:hidden;position:fixed;top:-1000px;right:-1000px;')
       ),
       'add' => array(
-        '#type' => 'button',
+        '#type' => 'submit',
         '#value' => '+',
         '#attributes' => array('title' => t('Add field')),
         '#name' => 'add-field-' . $i,
@@ -110,6 +114,8 @@ EOT
       ),
     );
     if ($i > 0) {
+    //FIXME:  Should be made something like (So that you can remove the first term as they appear, but not allow the last remaining field to be removed):
+    //if (count($values['terms']) > 1) {
       $term['remove'] = array(
         '#type' => 'button',
         '#field' => $i,
@@ -135,7 +141,7 @@ EOT
       'sort' => array(
         '#title' => t('Sort By'),
         '#type' => 'select',
-        '#default_value' => isset($values['sort']) ? $values['sort'] : 'score',
+        '#default_value' => (isset($values['sort']) ? $values['sort'] : 'score'),
         '#options' => array(
           'score' => t('Relevance'),
           'mods_title_mlt' => t('Title'),
@@ -145,15 +151,15 @@ EOT
       'order' => array(
         '#title' => t('Order'),
         '#type' => 'select',
-        '#default_value' => isset($values['order']) ? $values['order'] : 'desc',
+        '#default_value' => (isset($values['order']) ? $values['order'] : 'desc'),
         '#options' => array(
-          'asc' => t('Ascending'),
           'desc' => t('Descending'),
+          'asc' => t('Ascending'),
         ),
       ),
       'submit' => array(
         '#type' => 'submit',
-        '#value' => 'Search'
+        '#value' => t('Search')
       )
     )
   );
@@ -179,7 +185,6 @@ function scholar_search_form_submit(array $form, array &$form_state) {
  * @param array $form_state 
  */
 function scholar_search_form_build_query(array &$form_state) {
-  $query = 'dc.title:*';
   $statements = array();
   foreach ($form_state['values']['terms'] as $term) {
     $field = $term['field'];
@@ -188,7 +193,7 @@ function scholar_search_form_build_query(array &$form_state) {
       $statements[] = "$field:($search)";
     }
   }
-  $query = !empty($statements) ? implode(' AND ', $statements) : '*'; // Empty return all results. 
+  $query = !empty($statements) ? implode(' AND ', $statements) : '*:*'; // Empty return all results. 
   return $query;
 }
 
@@ -209,7 +214,7 @@ function scholar_search_advanced_add_field() {
   module_load_include('inc', 'php_lib', 'Ahah');
   list($form_id, $form_build_id, $form, $form_state) = Ahah::getFormInfo();
   $form = Ahah::processForm($form_id, $form, $form_state);
-  $form_state['num_terms'] = count(element_children($form['terms'])) + 1;
+  $form_state['values']['terms'][] = array('');
   $form = Ahah::rebuildForm($form_id, $form_build_id, $form, $form_state);
   Ahah::respond($form['terms']);
 }
@@ -220,7 +225,6 @@ function scholar_search_advanced_remove_field() {
   $form = Ahah::processForm($form_id, $form, $form_state);
   $field = $form_state['clicked_button']['#field'];
   array_splice($form_state['values']['terms'], $field, 1);
-  $form_state['num_terms'] = count($form_state['values']['terms']);
   $form = Ahah::rebuildForm($form_id, $form_build_id, $form, $form_state);
   Ahah::respond($form['terms']);
 }
