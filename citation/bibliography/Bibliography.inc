@@ -96,8 +96,8 @@ class Bibliography {
    *   TRUE if the given fedora object exists within the bibliography, FALSE otherwise.
    */
   public static function AddCitation($pid, $uid = NULL, $check = TRUE) {
-    $add = $check ? self::IsCitation($pid) && !self::Exists($pid) : TRUE;
-    if ($add) {
+    $add = $check ? self::IsCitation($pid) : TRUE;
+    if ($add && !self::Exists($pid)) {
       $uid = self::GetUID($uid);
       return call_user_func(array(self::GetSource($uid), 'AddCitation'), $pid, $uid);
     }
