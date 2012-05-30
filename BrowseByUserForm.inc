@@ -22,8 +22,9 @@ function scholar_browse_by_user_form(array &$form_state) {
   $solr->setCreateDocuments(FALSE);
   $results = $solr->search('*', 0, 1000, array(
     'q.op' => 'AND',
-    'df' => 'mods.name_author',
-    'fl' => 'PID, mods.name_author',
+    'df' => variable_get('islandora_solr_search_author_field','mods.name_author'),
+    'fl' => 'PID, '.variable_get('islandora_solr_search_author_field','mods.name_author'),
+    // TODO: Add configuration option for default field
     'fq' => "rels.hasModel:\"info:fedora/ir:citationCModel\"")
   );
   $users = array();
