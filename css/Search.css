@@ -9,8 +9,7 @@ div.form-item select {
   display: inline-block;
 }*/
 
-
-#scholar-search-form div.form-item { 
+form#scholar-search-form div.form-item { 
   display: inline-block;
 }
 

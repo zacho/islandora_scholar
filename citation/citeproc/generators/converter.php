@@ -102,29 +102,44 @@ function convert_mods_to_citeproc_jsons($mods_in) {
         'title' => convert_mods_to_citeproc_json_title($mods),
         'abstract' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:abstract'),
         'call-number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:classification'),
+      // nigel: 
+      //'collection-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo[not(@type)]/mods:title'),
         'collection-title' => convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:relatedItem[@type='series']/mods:titleInfo/mods:title | 
             /mods:mods[not($parented)]/mods:relatedItem[@type='host']/mods:titleInfo/mods:title" 
             //." | /mods:mods[$parented]/mods:relatedItem[@type='host']/mods:relatedItem[@type='host']/mods:titleInfo/mods:title" //Not wanted for books and chapters (Not applicable for journal articles?)
         ),
+      // nigel:
+      //'container-title' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:titleInfo[not(@type)]/mods:title'),
         'container-title' => convert_mods_to_citeproc_json_query($mods, "/mods:mods[$parented]/mods:relatedItem[@type='host']/mods:titleInfo/mods:title"),
         'DOI' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="doi"]'),
         'edition' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:edition'),
         'event' => convert_mods_to_citeproc_json_event($mods),
         'event-place' => convert_mods_to_citeproc_json_event_place($mods),
+        // nigel: 
+        //'genre' => convert_mods_to_citeproc_json_genre($mods),
+        //adam: 
         //'genre' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="host"]/mods:genre[@authority="marcgt"]'),
         'ISBN' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="isbn"]'),
-        'volume' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="volume"]/mods:number'),
-        'issue' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="issue"]/mods:number'),
+        'volume' => (int) convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="volume"]/mods:number'),
+        'issue' => (int) convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:part/mods:detail[@type="issue"]/mods:number'),
         'note' => convert_mods_to_citeproc_json_note($mods),
         'number' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:relatedItem[@type="series"]/mods:titleInfo/mods:partNumber'),
         'page' => convert_mods_to_citeproc_json_page($mods),
+      // nigel: 
+      //'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher'),
         'publisher' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:publisher | /mods:mods/mods:relatedItem[@type="host"]/mods:originInfo/mods:publisher'),
+      // nigel: 
+      //'publisher-place' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:originInfo/mods:place/mods:placeTerm'),
         'publisher-place' => convert_mods_to_citeproc_json_query($mods, '(/mods:mods/mods:originInfo/mods:place/mods:placeTerm[@type="text"] | /mods:mods/mods:relatedItem[@type="host"]/mods:originInfo/mods:place/mods:placeTerm[@type="text"])[1]'),
-        //'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
-        'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmid"]'),
-        'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"]'),
-        'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"]'),
-        'type' => $type
+      // adam: 
+      //'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
+        'URL' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:location/mods:url'),
+      // nigel / adam synthesis:
+        'number-pmid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmid"] | /mods:mods/mods:identifier[@type="accession"]'),
+        'number-pmcid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="pmcid"] | /mods:mods/mods:identifier[@type="pmc"]'),
+        'number-nihmsid' => convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:identifier[@type="nihmsid"] | /mods:mods/mods:identifier[@type="mid"]'),
+      //'type' => $type //adam
+        'type' => convert_mods_to_citeproc_json_genre($mods)
       ), 
       $names, 
       $dates
@@ -134,6 +149,25 @@ function convert_mods_to_citeproc_jsons($mods_in) {
   else {
     watchdog('citeproc', 'Not a SimpleXMLElement!');
     return array();
+  }
+}
+
+/**
+ *
+ * @param type $mods 
+ */
+function convert_mods_to_citeproc_json_genre($mods) {
+  $genre = convert_mods_to_citeproc_json_query($mods, '/mods:mods/mods:genre');
+  switch (trim($genre)) {
+    case 'journal article':
+      return 'article-journal';
+    case 'book chapter':
+    case 'book section':
+      return 'chapter';
+    case 'book':
+      return 'book';
+    default:
+      return 'article-journal';
   }
 }
 
@@ -453,7 +487,9 @@ function convert_mods_to_citeproc_json_names(SimpleXMLElement $mods) {
       foreach ($names as $name) {
         add_mods_namespace($name);
         $role = convert_mods_to_citeproc_json_name_role($name, $valid_roles, $default_role);
-        $output[$role][] = convert_mods_to_citeproc_json_name($name);
+        if ($role !== FALSE) {
+          $output[$role][] = convert_mods_to_citeproc_json_name($name);
+        }
       }
     }
   }
@@ -536,7 +572,7 @@ function convert_mods_to_citeproc_json_name_corporate(SimpleXMLElement $name) {
  *   Gets the role of the given name.
  */
 function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $valid_roles, $default_role) {
-  module_load_include('inc', 'ir_citation', 'mods_to_citeproc_json/marcrelator_conversion');
+  module_load_include('inc', 'citeproc', 'generators/marcrelator_conversion');
   if (isset($name->role)) {
     $role = strtolower((string) $name->role->roleTerm);
     if (isset($name->role->roleTerm)) {
@@ -546,9 +582,9 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
         $role = marcrelator_code_to_term($role);
       }
     }
-    return array_key_exists($role, $valid_roles) ? $valid_roles[$role] : $default_role;
+    return array_key_exists($role, $valid_roles) ? $valid_roles[$role] : false;
   }
-  return $default_role;
+  return false;
 }
 
 function _try_parse_date(&$output, $date_string) {
@@ -573,6 +609,36 @@ function _try_parse_date(&$output, $date_string) {
  */
 function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   $output = array();
+  // Nigel's way
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['accessed']['date-parts'] = array(array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d'))));
+  }
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
+    $output['accessed']['raw'] = $date;
+  }
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['issued']['date-parts'] = array(array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d'))));
+  }
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued");
+    $output['issued']['raw'] = $date;
+  }
+  $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated[@encoding = 'iso8601']");
+  if (!empty($date)) {
+    $date_time = new DateTime($date);
+    $output['issued']['date-parts'] = array(array(intval($date_time->format('Y')), intval($date_time->format('m')), intval($date_time->format('d'))));
+  }
+  else {
+    $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated");
+    $output['issued']['raw'] = $date;
+  }
+  /*
+  // Adam's way
   $date_captured = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
   if (!empty($date_captured)) {
     _try_parse_date($output['accessed'], $date_captured);
@@ -587,6 +653,7 @@ function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   if (!empty($date_created) && empty($output['issued'])) {
     _try_parse_date($output['issued'], $date_created);
   }
+  */
   return $output;
 }
 
@@ -1092,14 +1159,14 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
     $csl_data['accessed']['raw'] = (string) $date_captured[0];
   }
 
-  $date_issued = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
-  if (!empty($date_issued)) {
-    $csl_data['issued']['raw'] = (string) $date_issued[0];
+  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
+  if (!empty($date)) {
+    $csl_data['issued']['raw'] = (string) $date[0];
   }
 
-  $date_created = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
-  if (!empty($date_created) && empty($csl_data['issued'])) {
-    $csl_data['issued']['raw'] = (string) $date_created[0];
+  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
+  if (!empty($date) && empty($csl_data['issued'])) {
+    $csl_data['issued']['raw'] = (string) $date[0];
   }
 
 

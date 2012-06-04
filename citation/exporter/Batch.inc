@@ -53,11 +53,11 @@ function citation_exporter_batch_export(array $pids, $style, $file_format) {
  * @param array $pids 
  */
 function citation_exporter_batch_store_pids_in_file($filename, array $pids) {
-  $file = fopen($filename, 'wb');
+  $handle = fopen($filename, 'wb');
   foreach ($pids as $pid) {
-    fwrite($file, trim($pid) ."\n");
+    fwrite($handle, trim($pid) . "\n");
   }
-  fclose($file);
+  fclose($handle);
 }
 
 /**
@@ -92,6 +92,16 @@ function citation_exporter_batch_get_num_pids_from_file($filename, $num = 1) {
     
     //Get the count of remaining PIDs to return.
     $remaining = count($pids_remaining);
+    /** 
+    // Nigel's way
+    for ($i = 0; $i < $num; $i++) {
+      if (!empty($pids)) {
+        $ret[] = trim(array_shift($pids));
+      }
+    }
+    citation_exporter_batch_store_pids_in_file($filename, $pids);
+    $remaining = count($pids);
+    */
   }
   return array($ret, $remaining);
 }

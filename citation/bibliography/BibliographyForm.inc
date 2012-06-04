@@ -31,7 +31,8 @@ function islandora_bibliography_form(array &$form_state) {
     return array(
       'fieldset' => array(
         '#type' => 'fieldset',
-        //'#title' => t('My Citations'),
+        '#title' => t('My Citations'),
+        '#description' => t('<p>Here you can remove or export citations from your bibliography.</p>'),
         'table' => islandora_bibilgraphy_form_table($pids),
         'preview_title' => array(
           '#value' => t('Preview Citations'),
@@ -64,7 +65,7 @@ function islandora_bibliography_form(array &$form_state) {
           '#length' => 50,
           '#options' => array(
             'RIS' => 'RIS (Endnote format)',
-            //'RTF' => 'RTF (word proccessor format)', //FIXME:  Need a new RTF library which supports unicode.
+            'RTF' => 'RTF (word proccessor format)',
             'PDF' => 'PDF',
           )
         ),
@@ -128,7 +129,7 @@ function islandora_bibilgraphy_form_table(array $pids) {
     list($title, $authors) = islandora_bibilgraphy_form_get_title_authors($pid);
     $rows[] = array(
       '#pid' => $pid,
-      'title' => array('#value' => l($title, "fedora/repository/$pid")),
+      'title' => array('#value' => l(check_plain($title), "fedora/repository/$pid")),
       'author' => array('#value' => check_plain($authors)),
       'remove' => array(
         '#type' => 'submit',
