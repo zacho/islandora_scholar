@@ -27,7 +27,7 @@ module_load_include('inc', 'scholar', 'Batch'); // To Deal with missing function
  */
 function scholar_menu() {
   $items = array();
-  /*
+  
   $items[MENU_SCHOLAR_HOME] = array(
     'title' => t('Search Publications'),
     'file' => 'pages/Home.inc',
@@ -35,7 +35,7 @@ function scholar_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('access content'),
     'type' => MENU_NORMAL_ITEM,
-  );*/
+  );
   $items[MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD] = array(
     'file' => 'SearchForm.inc',
     'page callback' => 'scholar_search_advanced_add_field',
