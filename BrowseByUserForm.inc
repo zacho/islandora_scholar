@@ -28,7 +28,7 @@ function scholar_browse_by_user_form(array &$form_state) {
   $users = array();
   foreach ($results->response->docs as &$doc) {
     $authors = $doc->{'mods.name_author'};
-    $authors = is_string($authors) ? array($authors) : $authors;
+    $authors = is_array($authors) ? $authors : array($authors);
     foreach ($authors as $name) {
       $users[$name] = $name;
     }
