@@ -31,7 +31,9 @@ function scholar_browse_by_user_form(array &$form_state) {
     $authors = $doc->{$solr_author_field};
     $authors = is_array($authors) ? $authors : array($authors);
     foreach ($authors as $name) {
-      $users[$name] = $name;
+      if (strlen ($name) < 200 ) {
+        $users[$name] = $name;
+      }
     }
   }
   sort($users);
