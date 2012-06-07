@@ -19,7 +19,7 @@ function scholar_browse_by_user_form(array &$form_state) {
   $path = parse_url(variable_get('islandora_solr_search_block_url', 'http://localhost:8080/solr/'));
   $solr = new Apache_Solr_Service($path['host'], $path['port'], $path['path']);
   $solr->setCreateDocuments(FALSE);
-  $results = $solr->search('*', 0, 1000, array(
+  $results = $solr->search('*:*', 0, 1000, array(
     'q.op' => 'AND',
     'df' => $solr_author_field,
     'fl' => 'PID, '.$solr_author_field,
