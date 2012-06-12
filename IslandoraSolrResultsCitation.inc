@@ -89,7 +89,7 @@ function template_preprocess_scholar_search_alt_item(array &$vars) {
 
   $vars['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
 
-  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style'], 'mods_fullxml_store', 'js'); //XXX:  Field needs to be made configurable...
+  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style'], variable_get('islandora_scholar_mods_xml_solr_field','mods_fullxml_store'), 'js'); //XXX:  Field needs to be made configurable...
 }
 
 /**
