@@ -145,7 +145,11 @@ function template_preprocess_scholar_overview_panel_citation(array &$variables) 
       );
 
       foreach ($parts as $key => $xpath) {
-        $variables[$key] = implode('<br/>', $mods->xpath($xpath));
+        $xpath_result = $mods->xpath($xpath);
+        // Don't try to implode FALSE
+        if ($xpath_result !== FALSE) {
+          $variables[$key] = implode('<br/>', $xpath_result);
+        }
       }
     }
   }
