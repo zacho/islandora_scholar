@@ -132,3 +132,13 @@ function scholar_admin_settings(array &$form_state) {
 
   return system_settings_form($form);
 }
+/*
+function scholar_admin_settings_validate($form, $form_state) {
+  if (!isset($form_state['values']['scholar_romeo_url'])) {
+    form_set_error('url', t('URL cannot be empty!'));
+  }
+  if (!isset($form_state['values']['scholar_romeo_key'])) {
+    form_set_error('key', t('Key cannot be empty!'));
+  }
+}
+*/
