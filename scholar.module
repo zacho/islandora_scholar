@@ -327,16 +327,17 @@ function scholar_form_content_model_viewer_edit_metadata_form_alter(array &$form
     array_unshift($form, $title);
     $form['#attributes'] = array('enctype' => 'multipart/form-data'); // Allow the uploading of files.
   }
-}*/
+}
+ */
 
 function _scholar_get_mods_from_solr_doc($doc, $solr_mods_field) {
   $mods = '';
   $pid = $doc->PID;
-          
+  
   if (isset($doc->{$solr_mods_field})) {
     $mods = trim($doc->{$solr_mods_field});
   }
- 
+  
   if (empty($mods)) {
     //Try to get from Fedora...
     module_load_include('inc', 'fedora_repository', 'api/fedora_item');
