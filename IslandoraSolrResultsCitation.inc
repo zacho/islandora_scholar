@@ -154,8 +154,9 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
     $pid = $doc->PID;
     $result = '';
     $pids[] = $pid;
-    //$result = theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style); //XXX: Might want to use ITEM_ALT and the solr doc instead?
-    $result = theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style);
+    // Turn the choice of getting object MODS from Fedora or Solr into a configuration option
+    // Default is to get it the old way: from Fedora -- THEME_SCHOLAR_SEARCH_ITEM
+    $result = (variable_get('islandora_scholar_theme_citation_from_solr_mods',false) ? theme(THEME_SCHOLAR_SEARCH_ITEM_ALT, $doc, $style) : theme(THEME_SCHOLAR_SEARCH_ITEM, $pid, $style));
     $table['rows'][] = array(
       '#pid' => $pid,
       'result' => array('#value' => $result),
