@@ -150,7 +150,7 @@ function scholar_islandora_solr_primary_display() {
  *   The Drupal form state.
  */
 function scholar_form_content_model_viewer_ingest_metadata_form_alter(array &$form, array &$form_state) {
-  /*if ($form_state['storage']['step'] == 1 && isset($form['indicator'])) {
+  if ($form_state['storage']['step'] == 1 && isset($form['indicator'])) {
     $models = array('ir:citationCModel/ISLANDORACM');
     $show_bulk_ingest = FALSE;
     foreach ($form['indicator']['models']['#options'] as $model => $label) {
@@ -168,7 +168,7 @@ function scholar_form_content_model_viewer_ingest_metadata_form_alter(array &$fo
       $form['#attributes'] = array('enctype' => 'multipart/form-data'); // Allow the uploading of files.
       $form['#validate'] = array('scholar_bulk_ingest_form_validate');
     }
-  }*/
+  }
 }
 
 function _scholar_update_mods_name_node(&$node, $name_info) {
