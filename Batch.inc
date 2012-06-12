@@ -242,7 +242,7 @@ function scholar_batch_ingest_ris_document($filename, $collection_pid, $content_
   $ris_filename = file_create_filename("ris.txt", $temp_file_dir);
   dsm('ris file:'.$ris_filename);
   
-  $record = bibutils_batch_get_ris_record($filename); // Get Single EndNote XML Record
+  $record = bibutils_batch_get_ris_record($filename); // Get Single RIS Record
   $file = fopen($ris_filename, 'w');
   fwrite($file, $record);
   fclose($file);
