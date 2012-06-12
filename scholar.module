@@ -9,6 +9,7 @@
  * Constants
  */
 define('MENU_SCHOLAR_HOME', 'scholar');
+define('MENU_SCHOLAR_SETTINGS', 'admin/settings/scholar');
 define('MENU_SCHOLAR_ADVANCED_SEARCH_ADD_FIELD', 'scholar/search/advanced/field/add');
 define('MENU_SCHOLAR_ADVANCED_SEARCH_REMOVE_FIELD', 'scholar/search/advanced/field/remove');
 define('THEME_SCHOLAR_HOME', 'scholar_home');
@@ -49,6 +50,15 @@ function scholar_menu() {
     'access callback' => 'user_access',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
+  );
+  $items[MENU_SCHOLAR_SETTINGS] = array(
+    'title' => t('Islandora Scholar Settings'),
+    'file' => 'scholar.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('scholar_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
   );
   return $items;
 }
