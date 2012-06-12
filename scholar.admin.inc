@@ -130,15 +130,5 @@ function scholar_admin_settings(array &$form_state) {
   );
   */
 
-  $form['scholar_csl'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('CSL settings'),
-  );
-  $form['scholar_csl']['islandora_scholar_default_csl'] = array(
-    '#type' => 'select',
-    '#options' => $options,
-    '#default_value' => variable_get('islandora_scholar_default_csl', NULL),
-  );
-
   return system_settings_form($form);
 }
