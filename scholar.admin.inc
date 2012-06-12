@@ -22,15 +22,6 @@ function scholar_admin_settings(array &$form_state) {
     '#type' => 'fieldset',
     '#title' => t('Solr Fields'),
   );
-/*
-  $form['scholar_solr']['islandora_scholar_solr_title_field'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Title Search Field'),
-    '#description' => t('The SOLR search field used for title.'),
-    '#default_value' => variable_get(VAR_SCHOLAR_SEARCH_FIELD_TITLE, 'title'),
-    '#required' => FALSE,
-  );
-*/
   $form['scholar_solr']['islandora_scholar_solr_author_field'] = array(
     '#type' => 'textfield',
     '#title' => t('Author Solr Field'),
@@ -45,22 +36,7 @@ function scholar_admin_settings(array &$form_state) {
     '#default_value' => variable_get('islandora_scholar_relsext_hasmodel_field', 'rels_hasModel_uri_ms'),
     '#required' => FALSE,
   );
-/*
-  $form[VAR_SCHOLAR_SEARCH_FIELD_TEXT] = array(
-    '#type' => 'textfield',
-    '#title' => t('Text Search Field'),
-    '#description' => t('The SOLR search field used for text.'),
-    '#default_value' => variable_get(VAR_SCHOLAR_SEARCH_FIELD_TEXT, 'text'),
-    '#required' => TRUE,
-  );
-  $form[VAR_SCHOLAR_SEARCH_FIELD_USER] = array(
-    '#type' => 'textfield',
-    '#title' => t('User Search Field'),
-    '#description' => t('The SOLR search field used for user.'),
-    '#default_value' => variable_get(VAR_SCHOLAR_SEARCH_FIELD_USER, 'user'),
-    '#required' => TRUE,
-  );
-*/
+
   $form['scholar_citation'] = array(
     '#type' => 'fieldset',
     '#title' => t('Citeproc'),
