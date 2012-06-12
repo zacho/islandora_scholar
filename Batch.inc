@@ -183,7 +183,10 @@ function scholar_batch_ingest_endnote_document($filename, $collection_pid, $cont
   }
   $sandbox =& $context['sandbox'];
   
-  $temp_file_dir = file_directory_temp();
+  /* Note: file_directory_temp caused ingest failures because islandora_content_model_forms/FOXML.inc
+     would build an un-resolvable URL like http://<hostname>//tmp/<filename>.
+     An update to islandora_content_model_forms to enable local filesystem references could resolve */
+  $temp_file_dir = file_directory_path();
   $mods_filename = file_create_filename("mods.xml", $temp_file_dir);
   $endnote_filename = file_create_filename("endnote.xml", $temp_file_dir);
   
@@ -231,9 +234,13 @@ function scholar_batch_ingest_ris_document($filename, $collection_pid, $content_
   }
   $sandbox =& $context['sandbox'];
   
-  $temp_file_dir = file_directory_temp();
+  /* Note: file_directory_temp caused ingest failures because islandora_content_model_forms/FOXML.inc
+     would build an un-resolvable URL like http://<hostname>//tmp/<filename>.
+     An update to islandora_content_model_forms to enable local filesystem references could resolve */
+  $temp_file_dir = file_directory_path();
   $mods_filename = file_create_filename("mods.xml", $temp_file_dir);
   $ris_filename = file_create_filename("ris.txt", $temp_file_dir);
+  dsm('ris file:'.$ris_filename);
   
   $record = bibutils_batch_get_ris_record($filename); // Get Single EndNote XML Record
   $file = fopen($ris_filename, 'w');
