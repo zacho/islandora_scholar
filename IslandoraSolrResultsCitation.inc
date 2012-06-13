@@ -32,7 +32,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
       $query_processor->executeQuery();
     }
     elseif ($query_processor->solrQuery === '*:*') {
-      $sort = 'mods_title_mlt';
+      $sort = variable_get('islandora_scholar_solr_title_field', 'mods_title_mlt');
       $order = 'asc';
       $query_processor->solrParams['fl'] = '*,score';
       $query_processor->solrParams['sort'] = $sort . ' ' . $order;
@@ -79,17 +79,18 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
 }
 
 function template_preprocess_scholar_search_alt_item(array &$vars) {
+  $mods_title_field = variable_get('islandora_scholar_solr_title_field', 'mods_title_mlt');
   $s_doc = & $vars['solr_doc'];
   $pid = $s_doc->PID;
 
-  $title = $s_doc->mods_title_mlt; //XXX:  Need to make the field configurable...
+  $title = $s_doc->$mods_title_field;
   if (is_array($title)) {
     $title = $title[0];
   }
 
   $vars['title'] = l($title, 'fedora/repository/' . htmlspecialchars($pid, ENT_QUOTES, 'utf-8'));
 
-  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style'], variable_get('islandora_scholar_mods_xml_solr_field','mods_fullxml_store'), 'js'); //XXX:  Field needs to be made configurable...
+  $vars['citation'] = scholar_citation_from_solr_doc($s_doc, $vars['style'], variable_get('islandora_scholar_mods_xml_solr_field','mods_fullxml_store'), 'js');
 }
 
 /**

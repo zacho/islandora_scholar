@@ -21,6 +21,7 @@ function scholar_search_form(array &$form_state) {
   drupal_add_js($path . '/js/Ahah.js');
   drupal_add_css($path . '/css/Search.css');
   module_load_include('inc', 'islandora_solr_search', 'includes/common');
+  $mods_title_field = variable_get('islandora_scholar_solr_title_field', 'mods_title_mlt');
   if (isset($_SESSION['scholar']['search']['values'])) {
     // Handles the changing of URL from the initial search page to the actual search page.
      
@@ -144,7 +145,7 @@ EOT
         '#default_value' => (isset($values['sort']) ? $values['sort'] : 'score'),
         '#options' => array(
           'score' => t('Relevance'),
-          'mods_title_mlt' => t('Title'),
+          $mods_title_field => t('Title'),
           'mods_dateIssued_s' => t('Date Issued'),
         ),
       ),
