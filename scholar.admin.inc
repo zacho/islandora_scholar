@@ -16,26 +16,59 @@
  * @return array
  */
 function scholar_admin_settings(array &$form_state) {
-  module_load_include('inc', 'scholar', 'citation/csl/CSL');
-  $csl = new CSL();
-  $options = $csl->GetNames();
+  $solr_url = variable_get('islandora_solr_search_block_url', 'localhost:8080/solr');
+  $http_pos = strpos($solr_url, 'http://');
+  if ($http_pos === FALSE) {
+    $solr_url = 'http://' . $solr_url;
+  }
+  $luke_url = $solr_url . '/admin/luke';
+  $xml_doc = new DOMDocument();
+  $xml_doc->load($luke_url, LIBXML_NOCDATA);
+  $xpath = new DOMXPath($xml_doc);
+  $query_all = '//lst[@name="fields"]/lst';
+  $entries = $xpath->query($query_all);
+  $solr_fields_all = array();
+  foreach ($entries as $entry) {
+    $name = $entry->getAttribute('name');
+    $solr_fields_all[$name] = $name;
+  }
+  asort($solr_fields_all);
+  $query_single_valued = '//lst[@name="fields"]/lst/str[@name="schema" and not(contains(.,"M"))]/..';
+  $entries = $xpath->query($query_single_valued);
+  $solr_fields_single_valued = array();
+  foreach ($entries as $entry) {
+    $name = $entry->getAttribute('name');
+    $solr_fields_single_valued[$name] = $name;
+  }
+  asort($solr_fields_single_valued);
   
+    
   $form = array();
   $form['scholar_solr'] = array(
     '#type' => 'fieldset',
     '#title' => t('Solr Fields'),
   );
   $form['scholar_solr']['islandora_scholar_solr_author_field'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Author Solr Field'),
+    '#type' => 'select',
+    '#title' => t('Stored Author Field'),
     '#description' => t('The SOLR search field used for author lookups.'),
+    '#options' => $solr_fields_all,
     '#default_value' => variable_get('islandora_scholar_solr_author_field', 'mods_name_author_ms'),
     '#required' => FALSE,
   );
+  $form['scholar_solr']['islandora_scholar_solr_title_field'] = array(
+    '#type' => 'select',
+    '#title' => t('Stored Title Field'),
+    '#description' => t('The SOLR search field used for title lookups and sorting. This cannot be a multi-valued field!'),
+    '#options' => $solr_fields_single_valued,
+    '#default_value' => variable_get('islandora_scholar_solr_title_field', 'mods_title_mlt'),
+    '#required' => FALSE,
+  );
   $form['scholar_solr']['islandora_scholar_relsext_hasmodel_field'] = array(
-    '#type' => 'textfield',
+    '#type' => 'select',
     '#title' => t('RELS-EXT Solr Field'),
     '#description' => t('The SOLR search field that contains RELS-EXT relationships from Fedora.'),
+    '#options' => $solr_fields_all,
     '#default_value' => variable_get('islandora_scholar_relsext_hasmodel_field', 'rels_hasModel_uri_ms'),
     '#required' => FALSE,
   );
