@@ -31,43 +31,37 @@ function islandora_bibliography_form(array &$form_state) {
     return array(
       'fieldset' => array(
         '#type' => 'fieldset',
-        '#title' => t('My Citations'),
-        '#description' => t('<p>Here you can remove or export citations from your bibliography.</p>'),
+        '#title' => t('Citations'),
+        'step_1' => array(
+          '#value' => t('Select or remove your citations'),
+          '#prefix' => '<h3>',
+          '#suffix' => '</h3>'
+        ),
         'table' => islandora_bibilgraphy_form_table($pids),
-        'preview_title' => array(
-          '#value' => t('Preview Citations'),
-          '#prefix' => '<h4>',
-          '#suffix' => '</h4>'
-        ),
-        'preview_style' => array(
-          '#title' => t('Style'),
-          '#type' => 'select',
-          '#options' => $styles
-        ),
-        'preview' => array(
-          '#type' => 'submit',
-          '#value' => t('Preview Selected'),
-          '#submit' => array('islandora_bibliography_form_preview')
-        ),
         'remove' => array(
           '#type' => 'submit',
           '#value' => t('Remove Selected'),
           '#submit' => array('islandora_bibliography_form_remove')
         ),
-        'export_title' => array(
-          '#value' => t('Export To File'),
-          '#prefix' => '<h4>',
-          '#suffix' => '</h4>'
+        'step_2' => array(
+          '#value' => t('Create bibliography or export references'),
+          '#prefix' => '<h3>',
+          '#suffix' => '</h3>'
         ),
         'format' => array(
           '#title' => t('Format'),
           '#type' => 'select',
           '#length' => 50,
           '#options' => array(
-            'RIS' => 'RIS (Endnote format)',
-            'RTF' => 'RTF (word proccessor format)',
-            'PDF' => 'PDF',
-          )
+            'Bibliography' => array(
+              'HTML' => 'Preview',
+              'RTF' => 'RTF',
+              'PDF' => 'PDF',
+            ),
+            'Export Data' => array(
+              'RIS' => 'RIS',
+            ),
+          ),
         ),
         'style' => array(
           '#title' => t('Style'),
@@ -192,7 +186,7 @@ function islandora_bibliography_form_preview(array $form, array &$form_state) {
   module_load_include('inc', 'citeproc', 'CiteProcJSBibliography');
   drupal_add_css(drupal_get_path('module', 'islandora_bibliography') . '/css/export.css');
   $selections = $form_state['values']['table']['selections'];
-  $style = citeproc_style($form_state['values']['preview_style']);
+  $style = citeproc_style($form_state['values']['style']);
   $bibliography = new CiteProcJSBibliography($style);
   $selections = array_filter($selections);
   $selections = array_keys($selections);
@@ -203,7 +197,12 @@ function islandora_bibliography_form_preview(array $form, array &$form_state) {
       $bibliography->addCitation($citation);
     }
   }
-  $output = $bibliography->render();
+  if (isset($selections[0])) {
+    $output = $bibliography->render();
+  }
+  else {
+    drupal_set_message(t('No citations were selected!'), 'warning');
+  }
   $output .= l(t('Return to the Bibliography.'), 'bibliography');
   print theme('page', $output, FALSE);
   exit();
@@ -232,9 +231,19 @@ function islandora_bibliography_form_remove(array $form, array &$form_state) {
 function islandora_bibliography_form_export(array $form, array &$form_state) {
   module_load_include('inc', 'citation_exporter', 'Batch');
   $selections = array_filter($form_state['values']['table']['selections']);
-  $pids = array_keys($selections);
-  citation_exporter_batch_export($pids, $form_state['values']['style'], $form_state['values']['format']);
-  batch_process();
+  if ($selections != NULL) {
+    $pids = array_keys($selections);
+    if ($form_state['values']['format'] == 'HTML') {
+      islandora_bibliography_form_preview($form, $form_state);
+    }
+    else {
+      citation_exporter_batch_export($pids, $form_state['values']['style'], $form_state['values']['format']);
+      batch_process();
+    }
+  }
+  else {
+    drupal_set_message(t('No citations were selected!'), 'warning');
+  }
 }
 
 /**
@@ -274,7 +283,7 @@ function islandora_bibilgraphy_form_get_mods($pid) {
  */
 function theme_islandora_bibliography_form_table(array $element) {
   
-  $caption = t('Remove or export citations from your bibliography');
+  // $caption = t('Remove or export citations from your bibliography');
 
   $rows = array();
   foreach (element_children($element['rows']) as $child) {
