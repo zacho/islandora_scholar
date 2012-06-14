@@ -53,6 +53,7 @@ function scholar_menu() {
   );
   $items[MENU_SCHOLAR_SETTINGS] = array(
     'title' => t('Islandora Scholar Settings'),
+    'description' => t('Configure Islandora Scholar-specific settings.'),
     'file' => 'scholar.admin.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('scholar_admin_settings'),
