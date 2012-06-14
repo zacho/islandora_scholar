@@ -64,6 +64,14 @@ function scholar_menu() {
 }
 
 /**
+ * Implements hook_cron().
+*/
+function scholar_cron() {
+  module_load_include('inc', 'scholar', 'scholar.cron');
+  scholar_cron_embargo_check();
+}
+
+/**
  * Implements hook_theme().
  */
 function scholar_theme() {

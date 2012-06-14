@@ -41,6 +41,16 @@ function scholar_admin_settings(array &$form_state) {
     $solr_fields_single_valued[$name] = $name;
   }
   asort($solr_fields_single_valued);
+  // Shorter list of date fields
+  $query_date_fields = '//lst[@name="fields"]/lst/str[@name="type" and text()="date"]/..';
+  $entries = $xpath->query($query_date_fields);
+  $solr_date_fields = array();
+  $solr_date_fields[''] = '';
+  foreach ($entries as $entry) {
+    $name = $entry->getAttribute('name');
+    $solr_date_fields[$name] = $name;
+  }
+  asort($solr_date_fields);
   
     
   $form = array();
@@ -71,6 +81,34 @@ function scholar_admin_settings(array &$form_state) {
     '#options' => $solr_fields_all,
     '#default_value' => variable_get('islandora_scholar_relsext_hasmodel_field', 'rels_hasModel_uri_ms'),
     '#required' => FALSE,
+  );
+  
+  $form['scholar_embargo'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Solr Fields'),
+  );
+  $form['scholar_embargo']['islandora_scholar_embargo_date_field'] = array(
+    '#type' => 'select',
+    '#title' => t('Embargo End Date Field - Document'),
+    '#description' => t('A Solr date field which contains document embargo expiration dates. This must be a true Solr date field.'),
+    '#options' => $solr_date_fields,
+    '#default_value' => variable_get('islandora_scholar_embargo_date_field', 'mods.embargo_date'),
+    '#required' => FALSE,
+  );
+  $form['scholar_embargo']['islandora_scholar_supp_embargo_date_field'] = array(
+    '#type' => 'select',
+    '#title' => t('Embargo End Date Field - Supplementary Data'),
+    '#description' => t('A Solr date field which contains supplementary data embargo expiration dates. This must be a true Solr date field.'),
+    '#options' => $solr_date_fields,
+    '#default_value' => variable_get('islandora_scholar_supp_embargo_date_field', 'mods.supp_embargo_date'),
+    '#required' => FALSE,
+  );
+  $form['scholar_embargo']['islandora_scholar_embargo_cron_days'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Embargo Query Length',
+    '#description' => 'The number of days back that the system should look for expired embargo dates.  The more regular your system\'s cron job, the smaller this value can be.',
+    '#default_value' => variable_get('islandora_scholar_embargo_cron_days', "7"),
+    // '#element_validate' => array('_scholar_validate_integer'),
   );
 
   $form['scholar_citation'] = array(
