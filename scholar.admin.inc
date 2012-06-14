@@ -25,17 +25,21 @@ function scholar_admin_settings(array &$form_state) {
   $xml_doc = new DOMDocument();
   $xml_doc->load($luke_url, LIBXML_NOCDATA);
   $xpath = new DOMXPath($xml_doc);
+  // Big list of all Solr fields
   $query_all = '//lst[@name="fields"]/lst';
   $entries = $xpath->query($query_all);
   $solr_fields_all = array();
+  $solr_fields_all[''] = '';
   foreach ($entries as $entry) {
     $name = $entry->getAttribute('name');
     $solr_fields_all[$name] = $name;
   }
   asort($solr_fields_all);
+  // Shorter list of single-valued, stored (read: sortable) fields
   $query_single_valued = '//lst[@name="fields"]/lst/str[@name="schema" and not(contains(.,"M"))]/..';
   $entries = $xpath->query($query_single_valued);
   $solr_fields_single_valued = array();
+  $solr_fields_single_valued[''] = '';
   foreach ($entries as $entry) {
     $name = $entry->getAttribute('name');
     $solr_fields_single_valued[$name] = $name;
