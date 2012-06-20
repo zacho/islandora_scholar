@@ -559,12 +559,19 @@ function _try_parse_date(&$output, $date_string) {
       array(
         $parsed['year'],
         $parsed['month'],
-        $parsed['day']
+        $parsed['day'],
       )
     );
   }
   else {
-    $output['raw'] = $date_string;
+    module_load_include('php', 'citeproc', 'lib/citeproc-php/CSL_Dateparser');
+    $parser = CSL_Dateparser::getInstance();
+    if ($parsed = $parser->parse($date_string)) {
+      $output = $parsed;
+    }
+    else {
+      $output['raw'] = $date_string;
+    }
   }
 }
 
