@@ -553,6 +553,7 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
 
 function _try_parse_date(&$output, $date_string) {
   //FIXME:  Need a more reliable way to get the date info...
+  //XXX:  Short circuited with FALSE to use the "else" block...
   if (FALSE && ($parsed = date_parse($date_string))) {
     //dd($parsed, 'Parsed date');
     $output['date-parts'] = array(
@@ -566,7 +567,8 @@ function _try_parse_date(&$output, $date_string) {
   else {
     module_load_include('php', 'citeproc', 'lib/citeproc-php/CSL_Dateparser');
     $parser = CSL_Dateparser::getInstance();
-    if ($parsed = $parser->parse($date_string)) {
+    //XXX:  Short circuited with FALSE to test the JS parser...
+    if (FALSE && $parsed = $parser->parse($date_string)) {
       $output = $parsed;
     }
     else {
