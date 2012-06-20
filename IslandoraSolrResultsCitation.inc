@@ -32,7 +32,7 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
       $query_processor->executeQuery();
     }
     elseif ($query_processor->solrQuery === '*:*') {
-      $sort = 'mods_title_mlt';
+      $sort = 'mods_title_local_mlt';
       $order = 'asc';
       $query_processor->solrParams['fl'] = '*,score';
       $query_processor->solrParams['sort'] = $sort . ' ' . $order;
@@ -49,7 +49,6 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     islandora_solr_search_pager_init($total, $query_processor->solrLimit);
     $output .= '<div class="content">';
     $output .= drupal_get_form('scholar_search_results_form', $query_processor);
-    $output .= theme('pager', null, $query_processor->solrLimit, 0, null, 5);
     $output .= "</div>";
     return $output;
   }
@@ -82,7 +81,7 @@ function template_preprocess_scholar_search_alt_item(array &$vars) {
   $s_doc = & $vars['solr_doc'];
   $pid = $s_doc->PID;
 
-  $title = $s_doc->mods_title_mlt; //XXX:  Need to make the field configurable...
+  $title = $s_doc->mods_title_local_mlt; //XXX:  Need to make the field configurable...
   if (is_array($title)) {
     $title = $title[0];
   }
@@ -237,10 +236,13 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
         )
       ),
     ),
-    'pager' => array(
+    'pager-top' => array(
       '#value' => theme('pager', null, $query_processor->solrLimit, 0, null, 5)
     ),
     'table' => $table,
+    'pager-bottom' => array(
+      '#value' => theme('pager', null, $query_processor->solrLimit, 0, null, 5)
+    ),
   );
 }
 
