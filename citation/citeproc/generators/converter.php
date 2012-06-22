@@ -589,7 +589,8 @@ function convert_mods_to_citeproc_json_name_role(SimpleXMLElement $name, array $
 
 function _try_parse_date(&$output, $date_string) {
   //FIXME:  Need a more reliable way to get the date info...
-  if (FALSE && ($parsed = date_parse($date_string))) {
+  $num_parts = preg_split('#[\.\-\/\s\\\]+#', $date_string);
+  if (($parsed = date_parse($date_string)) && !empty($parsed['year']) && empty($parsed['error_count']) && empty($parsed['warning_count'])) {
     //dd($parsed, 'Parsed date');
     $output['date-parts'] = array(
       array(
@@ -617,7 +618,10 @@ function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   }
   else {
     $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCaptured");
-    $output['accessed']['raw'] = $date;
+    // don't print a null accessed date
+    if (!empty($date)) {
+      _try_parse_date($output['accessed'], $date);
+    }
   }
   $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued[@encoding = 'iso8601']");
   if (!empty($date)) {
@@ -626,7 +630,10 @@ function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   }
   else {
     $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateIssued");
-    $output['issued']['raw'] = $date;
+    // don't print a null issued date
+    if (!empty($date)) {
+      _try_parse_date($output['issued'], $date);
+    }
   }
   $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated[@encoding = 'iso8601']");
   if (!empty($date)) {
@@ -635,7 +642,10 @@ function convert_mods_to_citeproc_json_dates(SimpleXMLElement $mods) {
   }
   else {
     $date = convert_mods_to_citeproc_json_query($mods, "/mods:mods/mods:originInfo/mods:dateCreated");
-    $output['issued']['raw'] = $date;
+    // don't print a null issued date
+    if (!empty($date) && empty($output['issued']['raw'])) {
+      _try_parse_date($output['issued'], $date);
+    }
   }
   /*
   // Adam's way
