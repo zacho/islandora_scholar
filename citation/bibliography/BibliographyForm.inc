@@ -18,6 +18,7 @@
  *   The drupal form.
  */
 function islandora_bibliography_form(array &$form_state) {
+  $GLOBALS['conf']['cache'] = CACHE_DISABLED;
   module_load_include('inc', 'islandora_bibliography', 'Bibliography');
   citation_exporter_include_download_redirect();
   $pids = Bibliography::GetCitations();

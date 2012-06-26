@@ -20,10 +20,12 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
    * @param string $output 
    */
   function displayResults(IslandoraSolrQueryProcessor $query_processor, $title = "Search Results", $output = '') {
+    $GLOBALS['conf']['cache'] = CACHE_DISABLED;    
+
     module_load_include('inc', 'scholar', 'SearchForm');
     drupal_set_title(t('Search Publications'));
     drupal_add_css(drupal_get_path('module', 'scholar') . '/css/Search.css');
-    
+     
     if (!empty($_SESSION['scholar']['search']['sort'])) {
       $sort = $_SESSION['scholar']['search']['sort'];
       $order = $_SESSION['scholar']['search']['order'];
@@ -49,7 +51,6 @@ class IslandoraSolrResultsCitation extends IslandoraSolrResults {
     islandora_solr_search_pager_init($total, $query_processor->solrLimit);
     $output .= '<div class="content">';
     $output .= drupal_get_form('scholar_search_results_form', $query_processor);
-    $output .= theme('pager', null, $query_processor->solrLimit, 0, null, 5);
     $output .= "</div>";
     return $output;
   }
@@ -239,10 +240,13 @@ function scholar_search_results_form(array &$form_state, IslandoraSolrQueryProce
         )
       ),
     ),
-    'pager' => array(
+    'pager-top' => array(
       '#value' => theme('pager', null, $query_processor->solrLimit, 0, null, 5)
     ),
     'table' => $table,
+    'pager-bottom' => array(
+      '#value' => theme('pager', null, $query_processor->solrLimit, 0, null, 5)
+    ),
   );
 }
 

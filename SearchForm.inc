@@ -177,7 +177,8 @@ function scholar_search_form_submit(array $form, array &$form_state) {
   $_SESSION['scholar']['search']['sort'] = $form_state['values']['sort'];
   $_SESSION['scholar']['search']['order'] = $form_state['values']['order'];
   $query = scholar_search_form_build_query($form_state);
-  $form_state['redirect'] = 'islandora/solr/search/' . urlencode($query) . '/'; // Redirect to the search.
+  module_load_include('inc', 'islandora_solr_search', 'includes/common');
+  $form_state['redirect'] = 'islandora/solr/search/' . drupal_urlencode(replaceSlashes($query)); // Redirect to the search.
   //coh_search_title %253A %2528 cancer %2529
 }
 

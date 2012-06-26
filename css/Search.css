@@ -23,6 +23,7 @@ form#scholar-search-form div.form-item {
 }
 
 #scholar-search-results-form > div > div {
+  width: 100%;
   float: left;
 }
 

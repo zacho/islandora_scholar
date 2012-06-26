@@ -596,12 +596,20 @@ function _try_parse_date(&$output, $date_string) {
       array(
         $parsed['year'],
         $parsed['month'],
-        $parsed['day']
+        $parsed['day'],
       )
     );
   }
   else {
-    $output['raw'] = $date_string;
+    module_load_include('php', 'citeproc', 'lib/citeproc-php/CSL_Dateparser');
+    $parser = CSL_Dateparser::getInstance();
+    //XXX:  Short circuited with FALSE to test the JS parser...
+    if (FALSE && $parsed = $parser->parse($date_string)) {
+      $output = $parsed;
+    }
+    else {
+      $output['raw'] = $date_string;
+    }
   }
 }
 
@@ -1169,14 +1177,14 @@ function convert_mods_to_citeproc_json($mods, $item_id) {
     $csl_data['accessed']['raw'] = (string) $date_captured[0];
   }
 
-  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
-  if (!empty($date)) {
-    $csl_data['issued']['raw'] = (string) $date[0];
+  $date_issued = $xml->xpath("//mods:mods//mods:originInfo/mods:dateIssued");
+  if (!empty($date_issued)) {
+    $csl_data['issued']['raw'] = (string) $date_issued[0];
   }
 
-  $date = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
-  if (!empty($date) && empty($csl_data['issued'])) {
-    $csl_data['issued']['raw'] = (string) $date[0];
+  $date_created = $xml->xpath("//mods:mods//mods:originInfo/mods:dateCreated");
+  if (!empty($date_created) && empty($csl_data['issued'])) {
+    $csl_data['issued']['raw'] = (string) $date_created[0];
   }
 
 
